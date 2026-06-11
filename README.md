@@ -96,7 +96,6 @@ Configure as variáveis:
 
 ```env
 DATABASE_URL="postgresql://usuario:senha@host:5432/zenixblox?schema=public"
-DIRECT_URL="postgresql://usuario:senha@host:5432/zenixblox?schema=public"
 AUTH_SECRET="uma-chave-segura-com-pelo-menos-32-caracteres"
 SEED_ADMIN_EMAIL="admin@zenixblox.com"
 SEED_ADMIN_PASSWORD="troque-esta-senha"

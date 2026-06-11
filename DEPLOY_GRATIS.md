@@ -12,15 +12,14 @@ Esta configuração usa:
 2. Clique em **New Project**.
 3. Use o nome `zenixblox` e escolha a região AWS mais próxima de Virgínia.
 4. No painel do projeto, clique em **Connect**.
-5. Ative **Connection pooling** e copie a URL. Ela contém `-pooler` no endereço.
-6. Desative **Connection pooling** e copie a segunda URL, sem `-pooler`.
+5. Deixe **Connection pooling** desativado.
+6. Copie a URL exibida, sem `-pooler` no endereço.
 
-Guarde as duas URLs:
+Guarde essa URL:
 
-- URL com `-pooler`: será `DATABASE_URL`.
-- URL sem `-pooler`: será `DIRECT_URL`.
+- URL sem `-pooler`: será `DATABASE_URL`.
 
-As duas devem terminar com `sslmode=require`. Caso o Neon ofereça `connect_timeout=15`, mantenha esse parâmetro.
+Ela deve conter `sslmode=require`. Caso o Neon ofereça `connect_timeout=15`, mantenha esse parâmetro.
 
 ## 2. Enviar o projeto ao GitHub
 
@@ -44,8 +43,7 @@ O `.env` não será enviado porque está no `.gitignore`.
 5. Preencha as variáveis solicitadas:
 
 ```env
-DATABASE_URL=URL_DO_NEON_COM_POOLER
-DIRECT_URL=URL_DO_NEON_SEM_POOLER
+DATABASE_URL=URL_DO_NEON_SEM_POOLER
 SEED_ADMIN_EMAIL=email-do-dono@exemplo.com
 SEED_ADMIN_PASSWORD=uma-senha-forte-e-exclusiva
 ```
