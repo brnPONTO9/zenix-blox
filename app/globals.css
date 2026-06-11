@@ -186,19 +186,14 @@ img {
   content: "";
   position: absolute;
   left: 50%;
-  top: 0;
-  bottom: 0;
+  top: 8px;
+  bottom: 8px;
   z-index: 4;
-  width: clamp(42px, 8vw, 72px);
+  width: 18px;
   transform: translateX(-50%);
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(119, 247, 200, 0.035) 38%,
-    rgba(119, 247, 200, 0.14) 50%,
-    rgba(119, 247, 200, 0.035) 62%,
-    transparent
-  );
+  border-radius: 999px;
+  background: rgba(119, 247, 200, 0.08);
+  filter: blur(7px);
   pointer-events: none;
 }
 
@@ -226,7 +221,7 @@ img {
   justify-self: center;
   z-index: 5;
   display: block;
-  width: clamp(36px, 7vw, 52px);
+  width: clamp(40px, 7vw, 58px);
   min-height: 100%;
   transform: translateZ(0);
   pointer-events: none;
@@ -237,26 +232,17 @@ img {
   position: absolute;
   display: block;
   left: 50%;
-  top: 0;
-  width: 3px;
-  height: 100%;
+  top: 8px;
+  bottom: 8px;
+  width: 4px;
   transform: translateX(-50%);
   border-radius: 999px;
-  background:
-    linear-gradient(
-      180deg,
-      transparent 0%,
-      rgba(119, 247, 200, 0.2) 5%,
-      #77f7c8 16%,
-      #ffffff 48%,
-      #ffffff 52%,
-      #77f7c8 84%,
-      rgba(119, 247, 200, 0.2) 95%,
-      transparent 100%
-    );
+  background: linear-gradient(180deg, #21c994, #ffffff 18%, #ffffff 82%, #21c994);
   box-shadow:
-    0 0 5px rgba(255, 255, 255, 0.8),
-    0 0 14px rgba(119, 247, 200, 0.75);
+    0 0 0 2px rgba(3, 8, 12, 0.95),
+    0 0 6px rgba(255, 255, 255, 0.95),
+    0 0 14px rgba(119, 247, 200, 0.95),
+    0 0 26px rgba(33, 201, 148, 0.62);
 }
 
 .roulette-pointer::after {
@@ -264,15 +250,12 @@ img {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: clamp(34px, 6vw, 46px);
-  height: clamp(34px, 6vw, 46px);
+  width: 14px;
+  height: calc(100% - 20px);
   transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: rgba(119, 247, 200, 0.1);
-  filter: blur(6px);
-  box-shadow:
-    0 0 18px rgba(119, 247, 200, 0.75),
-    0 0 34px rgba(119, 247, 200, 0.35);
+  border-radius: 999px;
+  background: rgba(119, 247, 200, 0.12);
+  filter: blur(5px);
 }
 
 .roulette-pointer-core {
@@ -281,40 +264,30 @@ img {
   top: 50%;
   z-index: 2;
   display: block;
-  width: clamp(28px, 5vw, 36px);
-  height: clamp(28px, 5vw, 36px);
-  transform: translate(-50%, -50%);
+  width: clamp(20px, 4vw, 26px);
+  height: clamp(20px, 4vw, 26px);
+  transform: translate(-50%, -50%) rotate(45deg);
   border: 2px solid #ffffff;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle, #ffffff 0 2px, #77f7c8 3px 6px, #08120f 7px 100%);
+  border-radius: 5px;
+  background: #07100d;
   box-shadow:
-    0 0 0 4px rgba(4, 7, 12, 0.94),
-    0 0 0 5px rgba(119, 247, 200, 0.7),
-    inset 0 0 8px rgba(119, 247, 200, 0.32),
-    0 0 20px rgba(119, 247, 200, 0.82);
+    0 0 0 3px rgba(4, 7, 12, 0.96),
+    0 0 0 5px #77f7c8,
+    inset 0 0 9px rgba(119, 247, 200, 0.55),
+    0 0 18px rgba(119, 247, 200, 0.95);
 }
 
-.roulette-pointer-core::before,
-.roulette-pointer-core::after {
+.roulette-pointer-core::before {
   content: "";
   position: absolute;
   left: 50%;
   top: 50%;
+  width: 6px;
+  height: 6px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
   background: #ffffff;
-  opacity: 0.92;
-}
-
-.roulette-pointer-core::before {
-  width: calc(100% + 12px);
-  height: 1px;
-  transform: translate(-50%, -50%);
-}
-
-.roulette-pointer-core::after {
-  width: 1px;
-  height: calc(100% + 12px);
-  transform: translate(-50%, -50%);
+  box-shadow: 0 0 8px #ffffff;
 }
 
 .roulette-pointer-cap {
@@ -322,20 +295,22 @@ img {
   left: 50%;
   z-index: 2;
   display: block;
-  width: clamp(20px, 4vw, 28px);
-  height: clamp(10px, 2vw, 14px);
+  width: clamp(30px, 5vw, 40px);
+  height: clamp(16px, 3vw, 21px);
   transform: translateX(-50%);
-  background: linear-gradient(180deg, #ffffff, #77f7c8 55%, #21c994);
-  filter: drop-shadow(0 0 7px rgba(119, 247, 200, 0.8));
+  background: linear-gradient(180deg, #ffffff 0%, #77f7c8 42%, #16a979 100%);
+  filter:
+    drop-shadow(0 2px 0 rgba(2, 8, 6, 0.95))
+    drop-shadow(0 0 8px rgba(119, 247, 200, 0.95));
 }
 
 .roulette-pointer-cap-top {
-  top: 2px;
+  top: 0;
   clip-path: polygon(0 0, 100% 0, 50% 100%);
 }
 
 .roulette-pointer-cap-bottom {
-  bottom: 2px;
+  bottom: 0;
   clip-path: polygon(50% 0, 100% 100%, 0 100%);
 }
 
