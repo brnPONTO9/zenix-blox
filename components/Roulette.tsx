@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type WheelItem = {
   id: string;
@@ -19,7 +19,7 @@ type WheelLaneProps = {
   onSpinEnd: (message: string, accessEnded: boolean) => void;
 };
 
-const cardWidth = 156;
+const cardWidth = 190;
 const targetIndex = 64;
 const idleIndex = 8;
 
@@ -61,6 +61,7 @@ function WheelLane({
 }: WheelLaneProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
+  const isSpinningRef = useRef(false);
   const [reel, setReel] = useState<WheelItem[]>(() => shuffleReel(items));
   const [winner, setWinner] = useState<WheelItem | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -68,16 +69,16 @@ function WheelLane({
   const [offset, setOffset] = useState(0);
 
   useEffect(() => {
-    if (isSpinning) {
+    if (isSpinningRef.current) {
       return;
     }
 
     setWinner(null);
     setReel(shuffleReel(items));
-  }, [items, isSpinning]);
+  }, [items]);
 
   useEffect(() => {
-    if (!reel.length || isSpinning) {
+    if (!reel.length || isSpinning || winner) {
       return;
     }
 
@@ -85,7 +86,7 @@ function WheelLane({
       setIsAnimating(false);
       setOffset(getCenteredOffset(viewportRef.current, trackRef.current, idleIndex));
     });
-  }, [reel.length, isSpinning]);
+  }, [reel.length, isSpinning, winner]);
 
   useEffect(() => {
     function handleResize() {
@@ -107,6 +108,7 @@ function WheelLane({
     onSpinStart(wheelNumber);
     setWinner(null);
     setIsSpinning(true);
+    isSpinningRef.current = true;
     setIsAnimating(false);
     setOffset(0);
 
@@ -120,6 +122,7 @@ function WheelLane({
 
       if (!response.ok) {
         setIsSpinning(false);
+        isSpinningRef.current = false;
         onSpinEnd(
           data.error ?? "Não foi possível girar a roleta.",
           response.status === 401 || data.accessEnded === true
@@ -145,11 +148,13 @@ function WheelLane({
       window.setTimeout(() => {
         setWinner(data.item);
         setIsSpinning(false);
+        isSpinningRef.current = false;
         setIsAnimating(false);
         onSpinEnd(`Você ganhou ${data.item.name}!`, !data.canSpinAgain);
       }, 6100);
     } catch {
       setIsSpinning(false);
+      isSpinningRef.current = false;
       onSpinEnd("Não foi possível girar a roleta.", false);
     }
   }
@@ -184,8 +189,6 @@ function WheelLane({
           {reel.length ? (
             <div className="roulette-pointer" aria-hidden="true">
               <span className="roulette-pointer-cap roulette-pointer-cap-top" />
-              <span className="roulette-pointer-core" />
-              <span className="roulette-pointer-cap roulette-pointer-cap-bottom" />
             </div>
           ) : null}
         </div>
@@ -208,6 +211,13 @@ export function Roulette() {
   const [activeWheel, setActiveWheel] = useState<number | null>(null);
   const [accessEnded, setAccessEnded] = useState(false);
   const [message, setMessage] = useState("");
+  const itemsByWheel = useMemo(
+    () =>
+      [1, 2, 3, 4].map((wheelNumber) =>
+        items.filter((item) => item.wheelNumber === wheelNumber)
+      ),
+    [items]
+  );
 
   useEffect(() => {
     let active = true;
@@ -218,7 +228,18 @@ export function Roulette() {
         const data = await response.json();
 
         if (active) {
-          setItems(data.items ?? []);
+          const loaded: WheelItem[] = data.items ?? [];
+
+          setItems((current) => {
+            const currentSignature = current
+              .map((item) => `${item.id}:${item.name}:${item.imageUrl}:${item.rarity}:${item.wheelNumber}`)
+              .join("|");
+            const loadedSignature = loaded
+              .map((item) => `${item.id}:${item.name}:${item.imageUrl}:${item.rarity}:${item.wheelNumber}`)
+              .join("|");
+
+            return currentSignature === loadedSignature ? current : loaded;
+          });
         }
       } catch {
         if (active) {
@@ -253,7 +274,7 @@ export function Roulette() {
           <WheelLane
             key={wheelNumber}
             wheelNumber={wheelNumber}
-            items={items.filter((item) => item.wheelNumber === wheelNumber)}
+            items={itemsByWheel[wheelNumber - 1]}
             spinLocked={activeWheel !== null}
             accessEnded={accessEnded}
             onSpinStart={(number) => {

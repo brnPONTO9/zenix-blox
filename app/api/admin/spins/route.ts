@@ -28,3 +28,14 @@ export async function GET() {
     }))
   });
 }
+
+export async function DELETE() {
+  const admin = await readAdminSession();
+  if (!admin) {
+    return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
+  }
+
+  const result = await prisma.spinHistory.deleteMany();
+
+  return NextResponse.json({ ok: true, deleted: result.count });
+}

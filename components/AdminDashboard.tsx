@@ -341,6 +341,44 @@ export function AdminDashboard() {
     setActionLoading(null);
   }
 
+  async function removeSpin(id: string) {
+    setMessage("");
+    setActionLoading(`spin-${id}`);
+    const response = await fetch(`/api/admin/spins/${id}`, { method: "DELETE" });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      setMessage(data.error ?? "Não foi possível remover este histórico.");
+      setActionLoading(null);
+      return;
+    }
+
+    setSpins((current) => current.filter((spin) => spin.id !== id));
+    setMessage("Histórico removido com sucesso.");
+    setActionLoading(null);
+  }
+
+  async function clearSpins() {
+    if (!window.confirm("Deseja remover todo o histórico de giros?")) {
+      return;
+    }
+
+    setMessage("");
+    setActionLoading("clear-spins");
+    const response = await fetch("/api/admin/spins", { method: "DELETE" });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      setMessage(data.error ?? "Não foi possível limpar o histórico.");
+      setActionLoading(null);
+      return;
+    }
+
+    setSpins([]);
+    setMessage("Todo o histórico foi removido.");
+    setActionLoading(null);
+  }
+
   function editItem(item: Item) {
     setEditingItemId(item.id);
     setItemForm({
@@ -575,21 +613,23 @@ export function AdminDashboard() {
                       <td>Roleta {item.wheelNumber}</td>
                       <td>{item.probability}</td>
                       <td>{item.active ? "Ativo" : "Inativo"}</td>
-                      <td className="space-x-2">
-                        <button
-                          disabled={Boolean(actionLoading)}
-                          onClick={() => editItem(item)}
-                          className="ghost-button"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          disabled={actionLoading === `item-${item.id}`}
-                          onClick={() => removeItem(item.id)}
-                          className="ghost-button"
-                        >
-                          {actionLoading === `item-${item.id}` ? "Removendo..." : "Remover"}
-                        </button>
+                      <td>
+                        <div className="admin-actions">
+                          <button
+                            disabled={Boolean(actionLoading)}
+                            onClick={() => editItem(item)}
+                            className="ghost-button"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            disabled={actionLoading === `item-${item.id}`}
+                            onClick={() => removeItem(item.id)}
+                            className="ghost-button"
+                          >
+                            {actionLoading === `item-${item.id}` ? "Removendo..." : "Remover"}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -678,21 +718,23 @@ export function AdminDashboard() {
                       </td>
                       <td>{key.singleUse ? "Único" : "Reutilizável"}</td>
                       <td>{formatDate(key.expiresAt)}</td>
-                      <td className="space-x-2">
-                        <button
-                          disabled={Boolean(actionLoading)}
-                          onClick={() => editKey(key)}
-                          className="ghost-button"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          disabled={actionLoading === `key-${key.id}`}
-                          onClick={() => removeKey(key.id)}
-                          className="ghost-button"
-                        >
-                          {actionLoading === `key-${key.id}` ? "Removendo..." : "Remover"}
-                        </button>
+                      <td>
+                        <div className="admin-actions">
+                          <button
+                            disabled={Boolean(actionLoading)}
+                            onClick={() => editKey(key)}
+                            className="ghost-button"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            disabled={actionLoading === `key-${key.id}`}
+                            onClick={() => removeKey(key.id)}
+                            className="ghost-button"
+                          >
+                            {actionLoading === `key-${key.id}` ? "Removendo..." : "Remover"}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -705,9 +747,19 @@ export function AdminDashboard() {
         <section className="admin-card mt-6">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-xl font-black">Histórico de giros</h2>
-            <a href="/api/admin/export" className="ghost-button inline-flex items-center">
-              Exportar CSV
-            </a>
+            <div className="admin-actions">
+              <a href="/api/admin/export" className="ghost-button">
+                Exportar CSV
+              </a>
+              <button
+                type="button"
+                onClick={() => void clearSpins()}
+                disabled={!spins.length || actionLoading === "clear-spins"}
+                className="ghost-button"
+              >
+                {actionLoading === "clear-spins" ? "Limpando..." : "Limpar histórico"}
+              </button>
+            </div>
           </div>
 
           <div className="overflow-auto">
@@ -718,6 +770,7 @@ export function AdminDashboard() {
                   <th>Prêmio</th>
                   <th>Roleta</th>
                   <th>Data</th>
+                  <th>Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -730,6 +783,18 @@ export function AdminDashboard() {
                     </td>
                     <td>Roleta {spin.wheelNumber}</td>
                     <td>{formatDate(spin.createdAt)}</td>
+                    <td>
+                      <div className="admin-actions">
+                        <button
+                          type="button"
+                          onClick={() => void removeSpin(spin.id)}
+                          disabled={actionLoading === `spin-${spin.id}`}
+                          className="ghost-button"
+                        >
+                          {actionLoading === `spin-${spin.id}` ? "Removendo..." : "Remover"}
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>

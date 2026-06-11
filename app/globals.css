@@ -183,21 +183,6 @@ img {
   contain: layout paint;
 }
 
-.roulette-viewport::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 8px;
-  bottom: 8px;
-  z-index: 8;
-  width: 18px;
-  transform: translateX(-50%);
-  border-radius: 999px;
-  background: rgba(119, 247, 200, 0.08);
-  filter: blur(7px);
-  pointer-events: none;
-}
-
 .roulette-track {
   grid-area: 1 / 1;
   position: relative;
@@ -220,75 +205,12 @@ img {
   position: absolute;
   left: 50%;
   top: 0;
-  bottom: 0;
+  height: 30px;
   z-index: 50;
   display: block;
-  width: clamp(40px, 7vw, 58px);
+  width: clamp(44px, 7vw, 58px);
   transform: translateX(-50%);
   pointer-events: none;
-}
-
-.roulette-pointer::before {
-  content: "";
-  position: absolute;
-  display: block;
-  left: 50%;
-  top: 8px;
-  bottom: 8px;
-  width: 5px;
-  transform: translateX(-50%);
-  border-radius: 999px;
-  background: linear-gradient(180deg, #21c994, #ffffff 18%, #ffffff 82%, #21c994);
-  box-shadow:
-    0 0 0 3px rgba(3, 8, 12, 0.98),
-    0 0 6px rgba(255, 255, 255, 0.95),
-    0 0 16px rgba(119, 247, 200, 1),
-    0 0 30px rgba(33, 201, 148, 0.78);
-}
-
-.roulette-pointer::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 14px;
-  height: calc(100% - 20px);
-  transform: translate(-50%, -50%);
-  border-radius: 999px;
-  background: rgba(119, 247, 200, 0.12);
-  filter: blur(5px);
-}
-
-.roulette-pointer-core {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  z-index: 52;
-  display: block;
-  width: clamp(20px, 4vw, 26px);
-  height: clamp(20px, 4vw, 26px);
-  transform: translate(-50%, -50%) rotate(45deg);
-  border: 2px solid #ffffff;
-  border-radius: 5px;
-  background: #07100d;
-  box-shadow:
-    0 0 0 3px rgba(4, 7, 12, 0.96),
-    0 0 0 5px #77f7c8,
-    inset 0 0 9px rgba(119, 247, 200, 0.55),
-    0 0 18px rgba(119, 247, 200, 0.95);
-}
-
-.roulette-pointer-core::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 6px;
-  height: 6px;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 0 8px #ffffff;
 }
 
 .roulette-pointer-cap {
@@ -296,8 +218,8 @@ img {
   left: 50%;
   z-index: 52;
   display: block;
-  width: clamp(30px, 5vw, 40px);
-  height: clamp(16px, 3vw, 21px);
+  width: clamp(38px, 6vw, 52px);
+  height: clamp(22px, 4vw, 30px);
   transform: translateX(-50%);
   background: linear-gradient(180deg, #ffffff 0%, #77f7c8 42%, #16a979 100%);
   filter:
@@ -310,14 +232,9 @@ img {
   clip-path: polygon(0 0, 100% 0, 50% 100%);
 }
 
-.roulette-pointer-cap-bottom {
-  bottom: 0;
-  clip-path: polygon(50% 0, 100% 100%, 0 100%);
-}
-
 .roulette-card {
-  flex: 0 0 clamp(112px, 18vw, 156px);
-  min-height: clamp(154px, 24vw, 198px);
+  flex: 0 0 clamp(140px, 22vw, 190px);
+  min-height: clamp(190px, 28vw, 242px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.055);
@@ -345,7 +262,7 @@ img {
 }
 
 .item-art {
-  height: clamp(100px, 16vw, 136px);
+  height: clamp(138px, 20vw, 178px);
   margin-bottom: clamp(0.55rem, 1.4vw, 0.8rem);
   border: 0;
   background: transparent;
@@ -394,6 +311,28 @@ img {
     linear-gradient(225deg, rgba(124, 92, 255, 0.1), transparent 32%),
     #080a12;
   color: white;
+  scrollbar-color: rgba(119, 247, 200, 0.72) rgba(6, 10, 18, 0.78);
+  scrollbar-width: thin;
+}
+
+.admin-layout ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.admin-layout ::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgba(6, 10, 18, 0.78);
+}
+
+.admin-layout ::-webkit-scrollbar-thumb {
+  border: 2px solid rgba(6, 10, 18, 0.9);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #77f7c8, #21c994);
+}
+
+.admin-layout ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #ffffff, #77f7c8);
 }
 
 .admin-card {
@@ -424,6 +363,14 @@ img {
   font-size: 0.72rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+.admin-actions {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
 }
 
 .ghost-button {
@@ -497,10 +444,10 @@ img {
 
 @media (max-width: 360px) {
   .roulette-card {
-    flex-basis: 104px;
+    flex-basis: 132px;
   }
 
   .item-art {
-    height: 96px;
+    height: 128px;
   }
 }
