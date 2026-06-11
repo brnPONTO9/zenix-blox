@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
           singleUse: accessKey.singleUse
         };
       },
-      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+      { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted }
     );
 
     const response = NextResponse.json({
@@ -133,11 +133,20 @@ export async function POST(request: NextRequest) {
       UNKNOWN: "Não foi possível girar a roleta agora."
     };
 
-    return NextResponse.json(
-      { error: labels[message] ?? labels.UNKNOWN },
+    const response = NextResponse.json(
+      {
+        error: labels[message] ?? labels.UNKNOWN,
+        accessEnded: message.startsWith("KEY_")
+      },
       {
         status: message.startsWith("KEY_") || message === "WHEEL_EMPTY" ? 409 : 500
       }
     );
+
+    if (message.startsWith("KEY_")) {
+      response.cookies.delete(ROULETTE_ACCESS_COOKIE);
+    }
+
+    return response;
   }
 }

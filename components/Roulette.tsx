@@ -134,7 +134,10 @@ function WheelLane({
 
       if (!response.ok) {
         setIsSpinning(false);
-        onSpinEnd(data.error ?? "Não foi possível girar a roleta.", response.status === 401);
+        onSpinEnd(
+          data.error ?? "Não foi possível girar a roleta.",
+          response.status === 401 || data.accessEnded === true
+        );
         return;
       }
 
