@@ -15,11 +15,9 @@ Sistema web completo para roleta de prêmios da ZenixBlox, com frontend público
 ## Funcionalidades
 
 - Roleta pública estilo CSGO com animação horizontal.
-- Key de uso único liberada automaticamente na primeira visita.
-- Atualizar a página recupera a mesma key; outro navegador na mesma conexão é bloqueado.
-- A key automática fica vinculada ao cookie seguro do dispositivo que a recebeu.
+- Acesso por key manual criada e administrada no painel.
+- Keys de uso único ou reutilizáveis, com ativação e validade configuráveis.
 - Sorteio ponderado no backend, sem confiar no navegador.
-- Keys de uso único ou reutilizáveis.
 - Proteção contra reutilização de key de uso único com transação no banco.
 - Admin com login, cookie httpOnly e middleware de proteção.
 - CRUD de itens da roleta.
@@ -127,6 +125,4 @@ O projeto inclui `render.yaml`, health check, migrations e seed automático. Sig
 - Troque a senha admin logo após o primeiro login.
 - Use HTTPS para proteger cookies.
 - Não exponha `DATABASE_URL`.
-- Use uma hospedagem ou proxy que informe o IP real em `X-Forwarded-For`, `X-Real-IP` ou `CF-Connecting-IP`.
-- Sem autenticação pessoal, trocar de rede ou usar VPN não pode ser impedido de forma absoluta.
 - O sorteio acontece em `/api/spin`, dentro de transação serializável, e o frontend apenas anima o resultado recebido.

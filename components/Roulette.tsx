@@ -12,8 +12,6 @@ type WheelItem = {
   probability?: number;
 };
 
-type AccessStatus = "loading" | "ready" | "used" | "blocked" | "error";
-
 const cardWidth = 156;
 const targetIndex = 64;
 const idleIndex = 8;
@@ -60,13 +58,11 @@ function getCenteredOffset(
 export function Roulette() {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
-  const hasRequestedAccessRef = useRef(false);
   const hasLoadedItemsRef = useRef(false);
   const isSpinningRef = useRef(false);
   const [items, setItems] = useState<WheelItem[]>([]);
   const [reel, setReel] = useState<WheelItem[]>([]);
   const [code, setCode] = useState("");
-  const [accessStatus, setAccessStatus] = useState<AccessStatus>("loading");
   const [message, setMessage] = useState("");
   const [winner, setWinner] = useState<WheelItem | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -127,52 +123,13 @@ export function Roulette() {
     };
   }, []);
 
-  async function claimAccessKey() {
-    setAccessStatus("loading");
-
-    try {
-      const response = await fetch("/api/access-key", {
-        method: "POST",
-        cache: "no-store"
-      });
-      const data = await response.json().catch(() => ({}));
-
-      if (response.ok && data.status === "ready" && data.code) {
-        setCode(data.code);
-        setAccessStatus("ready");
-        return;
-      }
-
-      setCode("");
-      if (data.status === "used") {
-        setAccessStatus("used");
-      } else if (data.status === "blocked") {
-        setAccessStatus("blocked");
-      } else {
-        setAccessStatus("error");
-      }
-    } catch {
-      setCode("");
-      setAccessStatus("error");
-    }
-  }
-
-  useEffect(() => {
-    if (hasRequestedAccessRef.current) {
-      return;
-    }
-
-    hasRequestedAccessRef.current = true;
-    void claimAccessKey();
-  }, []);
-
   async function spin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
     setWinner(null);
 
-    if (accessStatus !== "ready" || !code) {
-      setMessage("Esta participação não está disponível.");
+    if (!code.trim()) {
+      setMessage("Informe sua key para participar.");
       return;
     }
 
@@ -224,7 +181,6 @@ export function Roulette() {
       setIsSpinning(false);
       isSpinningRef.current = false;
       setIsAnimating(false);
-      setAccessStatus("used");
       setMessage(`Parabéns! Você ganhou ${data.item.name}.`);
     }, 6100);
   }
@@ -283,62 +239,30 @@ export function Roulette() {
                 Gire por prêmios ZenixBlox
               </h1>
               <p className="mt-4 text-sm leading-6 text-slate-300">
-                Sua participação é liberada automaticamente uma única vez. O
-                resultado é definido no servidor com chances configuradas pelo admin.
+                Digite a key fornecida para participar. O resultado é definido no
+                servidor com chances configuradas pelo admin.
               </p>
             </div>
 
             <form onSubmit={spin} className="space-y-4">
               <label className="block">
-                <span className="field-label">Sua key automática</span>
+                <span className="field-label">Sua key</span>
                 <input
                   value={code}
+                  onChange={(event) => setCode(event.target.value)}
                   className="field uppercase"
-                  placeholder={accessStatus === "loading" ? "Liberando participação..." : "-"}
-                  readOnly
+                  placeholder="Ex.: ZENIX-ABC123"
+                  autoComplete="off"
+                  disabled={isSpinning}
                 />
               </label>
               <button
-                disabled={isSpinning || accessStatus !== "ready"}
+                disabled={isSpinning || !code.trim()}
                 className="primary-button w-full"
               >
-                {isSpinning
-                  ? "Girando..."
-                  : accessStatus === "ready"
-                    ? "Girar Roleta"
-                    : accessStatus === "used"
-                      ? "Participação utilizada"
-                      : accessStatus === "loading"
-                        ? "Liberando..."
-                        : "Participação indisponível"}
+                {isSpinning ? "Girando..." : "Girar Roleta"}
               </button>
             </form>
-
-            {accessStatus === "blocked" ? (
-              <div className="mt-4 rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
-                Uma participação já foi emitida para esta conexão. Atualizar a
-                página ou trocar de navegador não libera uma nova key.
-              </div>
-            ) : null}
-
-            {accessStatus === "used" && !winner ? (
-              <div className="mt-4 rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
-                A participação deste dispositivo já foi utilizada.
-              </div>
-            ) : null}
-
-            {accessStatus === "error" ? (
-              <div className="mt-4 rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-rose-100">
-                Não foi possível liberar a participação.
-                <button
-                  type="button"
-                  onClick={() => void claimAccessKey()}
-                  className="ml-2 font-black underline"
-                >
-                  Tentar novamente
-                </button>
-              </div>
-            ) : null}
 
             {message ? (
               <div

@@ -1,14 +1,18 @@
 import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import {
-  getClientIp,
-  hashIdentity,
-  isValidDeviceToken
-} from "@/lib/client-identity";
-import { AUTO_KEY_COOKIE } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 import { pickWeightedItem, toPublicItem } from "@/lib/roulette";
 import { normalizeCode, spinSchema } from "@/lib/validation";
+
+function getClientIp(headers: Headers) {
+  const forwarded =
+    headers.get("cf-connecting-ip") ??
+    headers.get("x-real-ip") ??
+    headers.get("x-forwarded-for")?.split(",")[0];
+
+  const value = forwarded?.trim();
+  return value ? value.replace(/^::ffff:/, "") : null;
+}
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
@@ -29,8 +33,7 @@ export async function POST(request: NextRequest) {
     const result = await prisma.$transaction(
       async (tx) => {
         const accessKey = await tx.accessKey.findUnique({
-          where: { code },
-          include: { autoGrant: true }
+          where: { code }
         });
 
         if (!accessKey || !accessKey.active || accessKey.deletedAt) {
@@ -39,17 +42,6 @@ export async function POST(request: NextRequest) {
 
         if (accessKey.expiresAt && accessKey.expiresAt < new Date()) {
           throw new Error("KEY_EXPIRED");
-        }
-
-        if (accessKey.autoGrant) {
-          const deviceToken = request.cookies.get(AUTO_KEY_COOKIE)?.value;
-
-          if (
-            !isValidDeviceToken(deviceToken) ||
-            hashIdentity(`device:${deviceToken}`) !== accessKey.autoGrant.deviceHash
-          ) {
-            throw new Error("KEY_DEVICE");
-          }
         }
 
         if (accessKey.singleUse) {
@@ -94,19 +86,13 @@ export async function POST(request: NextRequest) {
       KEY_INVALID: "Key inválida ou desativada.",
       KEY_EXPIRED: "Esta key expirou.",
       KEY_USED: "Esta key já foi utilizada.",
-      KEY_DEVICE: "Esta key pertence a outro dispositivo.",
       UNKNOWN: "Não foi possível girar a roleta agora."
     };
 
     return NextResponse.json(
       { error: labels[message] ?? labels.UNKNOWN },
       {
-        status:
-          message === "KEY_DEVICE"
-            ? 403
-            : message.startsWith("KEY_")
-              ? 409
-              : 500
+        status: message.startsWith("KEY_") ? 409 : 500
       }
     );
   }

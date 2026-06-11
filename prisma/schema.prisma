@@ -35,17 +35,6 @@ model AccessKey {
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
   spins     SpinHistory[]
-  autoGrant AutoKeyGrant?
-}
-
-model AutoKeyGrant {
-  id          String    @id @default(cuid())
-  deviceHash  String    @unique
-  ipHash      String?   @unique
-  accessKeyId String    @unique
-  accessKey   AccessKey @relation(fields: [accessKeyId], references: [id], onDelete: Cascade)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
 }
 
 model WheelItem {
