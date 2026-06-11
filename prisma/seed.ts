@@ -11,13 +11,15 @@ async function main() {
     throw new Error("SEED_ADMIN_PASSWORD precisa estar configurada antes de executar o seed.");
   }
 
+  const passwordHash = await bcrypt.hash(password, 12);
+
   await prisma.admin.upsert({
     where: { email },
-    update: {},
+    update: { passwordHash },
     create: {
       name: "ZenixBlox Admin",
       email,
-      passwordHash: await bcrypt.hash(password, 12)
+      passwordHash
     }
   });
 

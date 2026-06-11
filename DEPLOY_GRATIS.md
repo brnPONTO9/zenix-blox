@@ -49,6 +49,7 @@ SEED_ADMIN_PASSWORD=uma-senha-forte-e-exclusiva
 ```
 
 O `AUTH_SECRET` será gerado automaticamente pelo Render. Não crie `SEED_DEMO_DATA` em produção.
+O e-mail cria o administrador e a senha é sincronizada novamente a cada deploy.
 
 ## 4. Aguardar a publicação
 
