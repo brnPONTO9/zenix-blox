@@ -115,7 +115,8 @@ export async function POST(request: NextRequest) {
 
     const response = NextResponse.json({
       spinId: result.spinId,
-      item: toPublicItem(result.item)
+      item: toPublicItem(result.item),
+      canSpinAgain: !result.singleUse
     });
 
     if (result.singleUse) {
