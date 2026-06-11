@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import clsx from "clsx";
 
 type WheelItem = {
   id: string;
@@ -23,19 +22,6 @@ type WheelLaneProps = {
 const cardWidth = 156;
 const targetIndex = 64;
 const idleIndex = 8;
-
-const rarityTone: Record<string, string> = {
-  comum: "from-slate-400 to-slate-200",
-  raro: "from-sky-400 to-cyan-200",
-  epico: "from-violet-500 to-fuchsia-300",
-  lendario: "from-amber-400 to-orange-200",
-  mítico: "from-rose-500 to-amber-200",
-  mitico: "from-rose-500 to-amber-200"
-};
-
-function itemTone(rarity: string) {
-  return rarityTone[rarity.toLowerCase()] ?? "from-emerald-400 to-teal-200";
-}
 
 function shuffleReel(items: WheelItem[], winner?: WheelItem) {
   if (!items.length) {
@@ -174,19 +160,18 @@ function WheelLane({
         <div ref={viewportRef} className="roulette-viewport">
           <div
             ref={trackRef}
-            className={clsx("roulette-track", isAnimating && "roulette-track-animate")}
+            className={`roulette-track ${isAnimating ? "roulette-track-animate" : ""}`}
             style={{ transform: `translate3d(-${offset}px, 0, 0)` }}
           >
             {reel.map((item, index) => (
               <article
                 key={`${item.id}-${index}`}
                 data-reel-index={index}
-                className={clsx(
-                  "roulette-card",
-                  winner?.id === item.id && index === targetIndex && "winner-card"
-                )}
+                className={`roulette-card ${
+                  winner?.id === item.id && index === targetIndex ? "winner-card" : ""
+                }`}
               >
-                <div className={clsx("item-art bg-gradient-to-br", itemTone(item.rarity))}>
+                <div className="item-art">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={item.imageUrl} alt="" />
                 </div>
