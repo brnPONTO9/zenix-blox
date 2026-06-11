@@ -173,6 +173,7 @@ img {
 .roulette-viewport {
   display: grid;
   position: relative;
+  isolation: isolate;
   z-index: 1;
   width: 100%;
   max-width: 100%;
@@ -188,7 +189,7 @@ img {
   left: 50%;
   top: 8px;
   bottom: 8px;
-  z-index: 4;
+  z-index: 8;
   width: 18px;
   transform: translateX(-50%);
   border-radius: 999px;
@@ -216,14 +217,14 @@ img {
 }
 
 .roulette-pointer {
-  grid-area: 1 / 1;
-  position: relative;
-  justify-self: center;
-  z-index: 5;
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  z-index: 50;
   display: block;
   width: clamp(40px, 7vw, 58px);
-  min-height: 100%;
-  transform: translateZ(0);
+  transform: translateX(-50%);
   pointer-events: none;
 }
 
@@ -234,15 +235,15 @@ img {
   left: 50%;
   top: 8px;
   bottom: 8px;
-  width: 4px;
+  width: 5px;
   transform: translateX(-50%);
   border-radius: 999px;
   background: linear-gradient(180deg, #21c994, #ffffff 18%, #ffffff 82%, #21c994);
   box-shadow:
-    0 0 0 2px rgba(3, 8, 12, 0.95),
+    0 0 0 3px rgba(3, 8, 12, 0.98),
     0 0 6px rgba(255, 255, 255, 0.95),
-    0 0 14px rgba(119, 247, 200, 0.95),
-    0 0 26px rgba(33, 201, 148, 0.62);
+    0 0 16px rgba(119, 247, 200, 1),
+    0 0 30px rgba(33, 201, 148, 0.78);
 }
 
 .roulette-pointer::after {
@@ -262,7 +263,7 @@ img {
   position: absolute;
   left: 50%;
   top: 50%;
-  z-index: 2;
+  z-index: 52;
   display: block;
   width: clamp(20px, 4vw, 26px);
   height: clamp(20px, 4vw, 26px);
@@ -293,7 +294,7 @@ img {
 .roulette-pointer-cap {
   position: absolute;
   left: 50%;
-  z-index: 2;
+  z-index: 52;
   display: block;
   width: clamp(30px, 5vw, 40px);
   height: clamp(16px, 3vw, 21px);
