@@ -37,6 +37,7 @@ export function toPublicItem(item: {
   name: string;
   imageUrl: string;
   rarity: string;
+  wheelNumber?: number;
   probability?: unknown;
   active?: boolean;
 }) {
@@ -45,6 +46,7 @@ export function toPublicItem(item: {
     name: item.name,
     imageUrl: item.imageUrl,
     rarity: item.rarity,
+    wheelNumber: item.wheelNumber,
     probability:
       item.probability === undefined ? undefined : Number(item.probability),
     active: item.active

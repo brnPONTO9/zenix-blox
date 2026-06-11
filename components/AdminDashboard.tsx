@@ -19,6 +19,7 @@ type Item = {
   imageUrl: string;
   rarity: string;
   probability: number;
+  wheelNumber: number;
   active: boolean;
 };
 
@@ -38,6 +39,7 @@ type Spin = {
   key: string;
   item: string;
   rarity: string;
+  wheelNumber: number;
   createdAt: string;
 };
 
@@ -46,6 +48,7 @@ const emptyItem = {
   imageUrl: "",
   rarity: "Raro",
   probability: "10",
+  wheelNumber: "1",
   active: true
 };
 
@@ -187,7 +190,8 @@ export function AdminDashboard() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...itemForm,
-        probability: Number(itemForm.probability)
+        probability: Number(itemForm.probability),
+        wheelNumber: Number(itemForm.wheelNumber)
       })
     });
     const data = await response.json().catch(() => ({}));
@@ -344,6 +348,7 @@ export function AdminDashboard() {
       imageUrl: item.imageUrl,
       rarity: item.rarity,
       probability: String(item.probability),
+      wheelNumber: String(item.wheelNumber),
       active: item.active
     });
   }
@@ -507,6 +512,18 @@ export function AdminDashboard() {
                   setItemForm({ ...itemForm, probability: event.target.value })
                 }
               />
+              <select
+                className="field"
+                value={itemForm.wheelNumber}
+                onChange={(event) =>
+                  setItemForm({ ...itemForm, wheelNumber: event.target.value })
+                }
+              >
+                <option value="1">Roleta 1</option>
+                <option value="2">Roleta 2</option>
+                <option value="3">Roleta 3</option>
+                <option value="4">Roleta 4</option>
+              </select>
               <label className="flex min-h-12 items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-3 text-sm font-bold">
                 <input
                   type="checkbox"
@@ -532,6 +549,7 @@ export function AdminDashboard() {
                 <thead>
                   <tr>
                     <th>Item</th>
+                    <th>Roleta</th>
                     <th>Chance</th>
                     <th>Status</th>
                     <th>Ações</th>
@@ -554,6 +572,7 @@ export function AdminDashboard() {
                           </div>
                         </div>
                       </td>
+                      <td>Roleta {item.wheelNumber}</td>
                       <td>{item.probability}</td>
                       <td>{item.active ? "Ativo" : "Inativo"}</td>
                       <td className="space-x-2">
@@ -697,6 +716,7 @@ export function AdminDashboard() {
                 <tr>
                   <th>Key</th>
                   <th>Prêmio</th>
+                  <th>Roleta</th>
                   <th>Data</th>
                 </tr>
               </thead>
@@ -708,6 +728,7 @@ export function AdminDashboard() {
                       {spin.item}
                       <span className="ml-2 text-xs text-slate-400">{spin.rarity}</span>
                     </td>
+                    <td>Roleta {spin.wheelNumber}</td>
                     <td>{formatDate(spin.createdAt)}</td>
                   </tr>
                 ))}

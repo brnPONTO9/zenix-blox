@@ -1,13 +1,13 @@
 import { redirect } from "next/navigation";
-import { AccessGate } from "@/components/AccessGate";
+import { Roulette } from "@/components/Roulette";
 import { readRouletteAccessSession } from "@/lib/auth";
 
-export default async function Home() {
+export default async function RoulettePage() {
   const accessKey = await readRouletteAccessSession();
 
-  if (accessKey) {
-    redirect("/roleta");
+  if (!accessKey) {
+    redirect("/");
   }
 
-  return <AccessGate />;
+  return <Roulette />;
 }

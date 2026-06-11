@@ -22,11 +22,12 @@ export async function GET() {
   });
 
   const rows = [
-    ["ID", "Key", "Item", "Raridade", "Data", "IP"].map(csv).join(","),
+    ["ID", "Key", "Roleta", "Item", "Raridade", "Data", "IP"].map(csv).join(","),
     ...spins.map((spin) =>
       [
         spin.id,
         spin.accessKey.code,
+        spin.wheelNumber,
         spin.item.name,
         spin.item.rarity,
         spin.createdAt.toISOString(),

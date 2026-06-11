@@ -63,7 +63,8 @@ Durante o primeiro deploy, o Render executará automaticamente:
 
 Quando o status ficar **Live**, acesse:
 
-- Roleta: `https://SEU-SERVICO.onrender.com`
+- Entrada da key: `https://SEU-SERVICO.onrender.com`
+- Roletas: `https://SEU-SERVICO.onrender.com/roleta`
 - Admin: `https://SEU-SERVICO.onrender.com/admin`
 
 ## Atualizações futuras

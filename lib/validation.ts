@@ -10,6 +10,7 @@ export const itemSchema = z.object({
   imageUrl: z.string().trim().min(1).max(500),
   rarity: z.string().trim().min(2).max(40),
   probability: z.coerce.number().positive().max(100000),
+  wheelNumber: z.coerce.number().int().min(1).max(4),
   active: z.coerce.boolean().default(true)
 });
 
@@ -22,6 +23,10 @@ export const keySchema = z.object({
 });
 
 export const spinSchema = z.object({
+  wheelNumber: z.coerce.number().int().min(1).max(4)
+});
+
+export const accessKeySchema = z.object({
   code: z.string().trim().min(3).max(80)
 });
 

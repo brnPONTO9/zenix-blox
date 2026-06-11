@@ -14,7 +14,9 @@ Sistema web completo para roleta de prêmios da ZenixBlox, com frontend público
 
 ## Funcionalidades
 
-- Roleta pública estilo CSGO com animação horizontal.
+- Página separada para validação da key.
+- Quatro roletas configuráveis com animação horizontal estilo CSGO.
+- Cada produto pode ser associado à Roleta 1, 2, 3 ou 4 pelo painel.
 - Acesso por key manual criada e administrada no painel.
 - Keys de uso único ou reutilizáveis, com ativação e validade configuráveis.
 - Sorteio ponderado no backend, sem confiar no navegador.
@@ -74,7 +76,8 @@ npm run dev
 
 Acesse:
 
-- Roleta: `http://localhost:3000`
+- Entrada da key: `http://localhost:3000`
+- Roletas: `http://localhost:3000/roleta` (requer uma key validada)
 - Admin: `http://localhost:3000/admin`
 
 Credenciais iniciais do seed são definidas no arquivo `.env`:

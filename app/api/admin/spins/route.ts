@@ -23,6 +23,7 @@ export async function GET() {
       key: spin.accessKey.code,
       item: spin.item.name,
       rarity: spin.item.rarity,
+      wheelNumber: spin.wheelNumber,
       createdAt: spin.createdAt.toISOString()
     }))
   });

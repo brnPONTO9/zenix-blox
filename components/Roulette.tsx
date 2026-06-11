@@ -9,6 +9,7 @@ type WheelItem = {
   name: string;
   imageUrl: string;
   rarity: string;
+  wheelNumber: number;
   probability?: number;
 };
 
@@ -62,20 +63,25 @@ export function Roulette() {
   const isSpinningRef = useRef(false);
   const [items, setItems] = useState<WheelItem[]>([]);
   const [reel, setReel] = useState<WheelItem[]>([]);
-  const [code, setCode] = useState("");
+  const [selectedWheel, setSelectedWheel] = useState(1);
   const [message, setMessage] = useState("");
   const [winner, setWinner] = useState<WheelItem | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [offset, setOffset] = useState(0);
 
+  const selectedItems = useMemo(
+    () => items.filter((item) => item.wheelNumber === selectedWheel),
+    [items, selectedWheel]
+  );
+
   const totalProbability = useMemo(
     () =>
-      items.reduce(
+      selectedItems.reduce(
         (sum, item) => sum + (typeof item.probability === "number" ? item.probability : 0),
         0
       ),
-    [items]
+    [selectedItems]
   );
 
   useEffect(() => {
@@ -95,7 +101,11 @@ export function Roulette() {
         hasLoadedItemsRef.current = true;
 
         if (!isSpinningRef.current) {
-          setReel(shuffleReel(loaded));
+          setReel(
+            shuffleReel(
+              loaded.filter((item: WheelItem) => item.wheelNumber === selectedWheel)
+            )
+          );
         }
       } catch {
         if (active && !hasLoadedItemsRef.current) {
@@ -121,20 +131,27 @@ export function Roulette() {
       window.removeEventListener("focus", refreshWhenVisible);
       document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
-  }, []);
+  }, [selectedWheel]);
+
+  function chooseWheel(wheelNumber: number) {
+    if (isSpinning) {
+      return;
+    }
+
+    setSelectedWheel(wheelNumber);
+    setWinner(null);
+    setMessage("");
+    setIsAnimating(false);
+    setOffset(0);
+  }
 
   async function spin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
     setWinner(null);
 
-    if (!code.trim()) {
-      setMessage("Informe sua key para participar.");
-      return;
-    }
-
-    if (!items.length) {
-      setMessage("A roleta ainda não possui itens ativos.");
+    if (!selectedItems.length) {
+      setMessage(`A Roleta ${selectedWheel} ainda não possui itens ativos.`);
       return;
     }
 
@@ -146,7 +163,7 @@ export function Roulette() {
     const response = await fetch("/api/spin", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code })
+      body: JSON.stringify({ wheelNumber: selectedWheel })
     });
     const data = await response.json();
 
@@ -157,7 +174,7 @@ export function Roulette() {
       return;
     }
 
-    const nextReel = shuffleReel(items, data.item);
+    const nextReel = shuffleReel(selectedItems, data.item);
     setReel(nextReel);
     setIsAnimating(false);
 
@@ -194,7 +211,7 @@ export function Roulette() {
       setIsAnimating(false);
       setOffset(getCenteredOffset(viewportRef.current, trackRef.current, idleIndex));
     });
-  }, [reel.length, isSpinning]);
+  }, [reel.length, isSpinning, selectedWheel]);
 
   useEffect(() => {
     function handleResize() {
@@ -239,28 +256,45 @@ export function Roulette() {
                 Gire por prêmios ZenixBlox
               </h1>
               <p className="mt-4 text-sm leading-6 text-slate-300">
-                Digite a key fornecida para participar. O resultado é definido no
-                servidor com chances configuradas pelo admin.
+                Escolha uma das quatro roletas e gire. Cada roleta possui seus próprios
+                produtos e chances configurados pelo admin.
               </p>
             </div>
 
             <form onSubmit={spin} className="space-y-4">
-              <label className="block">
-                <span className="field-label">Sua key</span>
-                <input
-                  value={code}
-                  onChange={(event) => setCode(event.target.value)}
-                  className="field uppercase"
-                  placeholder="Ex.: ZENIX-ABC123"
-                  autoComplete="off"
-                  disabled={isSpinning}
-                />
-              </label>
+              <div>
+                <span className="field-label">Escolha sua roleta</span>
+                <div className="grid grid-cols-2 gap-2">
+                  {[1, 2, 3, 4].map((wheelNumber) => {
+                    const itemCount = items.filter(
+                      (item) => item.wheelNumber === wheelNumber
+                    ).length;
+
+                    return (
+                      <button
+                        key={wheelNumber}
+                        type="button"
+                        onClick={() => chooseWheel(wheelNumber)}
+                        disabled={isSpinning}
+                        className={clsx(
+                          "roulette-choice",
+                          selectedWheel === wheelNumber && "roulette-choice-active"
+                        )}
+                      >
+                        <strong>Roleta {wheelNumber}</strong>
+                        <span>
+                          {itemCount} {itemCount === 1 ? "item" : "itens"}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               <button
-                disabled={isSpinning || !code.trim()}
+                disabled={isSpinning || !selectedItems.length}
                 className="primary-button w-full"
               >
-                {isSpinning ? "Girando..." : "Girar Roleta"}
+                {isSpinning ? "Girando..." : `Girar Roleta ${selectedWheel}`}
               </button>
             </form>
 
@@ -279,8 +313,8 @@ export function Roulette() {
 
             <dl className="mt-6 grid grid-cols-2 gap-3 text-sm max-[340px]:grid-cols-1">
               <div className="stat">
-                <dt>Itens ativos</dt>
-                <dd>{items.length}</dd>
+                <dt>Itens nesta roleta</dt>
+                <dd>{selectedItems.length}</dd>
               </div>
               <div className="stat">
                 <dt>Peso total</dt>
@@ -290,6 +324,17 @@ export function Roulette() {
           </aside>
 
           <section className="w-full min-w-0 space-y-4 sm:space-y-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.24em] text-volt">
+                  Selecionada
+                </p>
+                <h2 className="text-2xl font-black">Roleta {selectedWheel}</h2>
+              </div>
+              <span className="rounded-full border border-volt/25 bg-volt/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-volt">
+                {selectedItems.length} itens
+              </span>
+            </div>
             <div className="roulette-shell">
               <div ref={viewportRef} className="roulette-viewport">
                 <div

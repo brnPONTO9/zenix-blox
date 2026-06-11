@@ -28,31 +28,36 @@ async function main() {
       name: "Robux Spark Pack",
       imageUrl: "/items/robux-spark.svg",
       rarity: "Comum",
-      probability: 52
+      probability: 52,
+      wheelNumber: 1
     },
     {
       name: "VIP Server Boost",
       imageUrl: "/items/vip-boost.svg",
       rarity: "Raro",
-      probability: 28
+      probability: 28,
+      wheelNumber: 1
     },
     {
       name: "Avatar Neon Drop",
       imageUrl: "/items/avatar-drop.svg",
       rarity: "Epico",
-      probability: 14
+      probability: 14,
+      wheelNumber: 1
     },
     {
       name: "Gamepass Premium",
       imageUrl: "/items/gamepass-premium.svg",
       rarity: "Lendario",
-      probability: 5
+      probability: 5,
+      wheelNumber: 1
     },
     {
       name: "Zenix Ultra Prize",
       imageUrl: "/items/ultra-prize.svg",
       rarity: "Mitico",
-      probability: 1
+      probability: 1,
+      wheelNumber: 1
     }
   ];
 

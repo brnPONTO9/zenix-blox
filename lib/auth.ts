@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { ADMIN_COOKIE } from "@/lib/constants";
+import { ADMIN_COOKIE, ROULETTE_ACCESS_COOKIE } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 
 const getSecret = () => {
@@ -29,6 +29,49 @@ export async function createAdminToken(adminId: string) {
     .setIssuedAt()
     .setExpirationTime("8h")
     .sign(getSecret());
+}
+
+export async function createRouletteAccessToken(accessKeyId: string) {
+  return new SignJWT({ role: "roulette" })
+    .setProtectedHeader({ alg: "HS256" })
+    .setSubject(accessKeyId)
+    .setIssuedAt()
+    .setExpirationTime("2h")
+    .sign(getSecret());
+}
+
+export async function readRouletteAccessSession() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(ROULETTE_ACCESS_COOKIE)?.value;
+
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const { payload } = await jwtVerify(token, getSecret());
+    if (payload.role !== "roulette" || !payload.sub) {
+      return null;
+    }
+
+    const accessKey = await prisma.accessKey.findUnique({
+      where: { id: payload.sub }
+    });
+
+    if (
+      !accessKey ||
+      !accessKey.active ||
+      accessKey.deletedAt ||
+      (accessKey.expiresAt && accessKey.expiresAt < new Date()) ||
+      (accessKey.singleUse && accessKey.usedAt)
+    ) {
+      return null;
+    }
+
+    return accessKey;
+  } catch {
+    return null;
+  }
 }
 
 export async function readAdminSession() {

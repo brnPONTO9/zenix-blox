@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { jwtVerify } from "jose";
-import { ADMIN_COOKIE } from "@/lib/constants";
+import { ADMIN_COOKIE, ROULETTE_ACCESS_COOKIE } from "@/lib/constants";
 
 const secret = () => {
   const value = process.env.AUTH_SECRET;
@@ -9,29 +9,47 @@ const secret = () => {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
-  if (!pathname.startsWith("/admin") || pathname === "/admin/login") {
-    return NextResponse.next();
-  }
-
-  const token = request.cookies.get(ADMIN_COOKIE)?.value;
   const key = secret();
 
-  if (!token || !key) {
-    return NextResponse.redirect(new URL("/admin/login", request.url));
+  if (pathname.startsWith("/roleta")) {
+    const token = request.cookies.get(ROULETTE_ACCESS_COOKIE)?.value;
+
+    if (!token || !key) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+
+    try {
+      const { payload } = await jwtVerify(token, key);
+      if (payload.role !== "roulette") {
+        throw new Error("Invalid role");
+      }
+      return NextResponse.next();
+    } catch {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
   }
 
-  try {
-    const { payload } = await jwtVerify(token, key);
-    if (payload.role !== "admin") {
-      throw new Error("Invalid role");
+  if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
+    const token = request.cookies.get(ADMIN_COOKIE)?.value;
+
+    if (!token || !key) {
+      return NextResponse.redirect(new URL("/admin/login", request.url));
     }
-    return NextResponse.next();
-  } catch {
-    return NextResponse.redirect(new URL("/admin/login", request.url));
+
+    try {
+      const { payload } = await jwtVerify(token, key);
+      if (payload.role !== "admin") {
+        throw new Error("Invalid role");
+      }
+      return NextResponse.next();
+    } catch {
+      return NextResponse.redirect(new URL("/admin/login", request.url));
+    }
   }
+
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/admin/:path*"]
+  matcher: ["/admin/:path*", "/roleta/:path*"]
 };

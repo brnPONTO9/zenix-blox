@@ -1,8 +1,20 @@
 import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
+import { jwtVerify } from "jose";
+import { ROULETTE_ACCESS_COOKIE } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 import { pickWeightedItem, toPublicItem } from "@/lib/roulette";
-import { normalizeCode, spinSchema } from "@/lib/validation";
+import { spinSchema } from "@/lib/validation";
+
+function getSecret() {
+  const value = process.env.AUTH_SECRET;
+
+  if (!value || value.length < 32) {
+    throw new Error("AUTH_SECRET must have at least 32 characters.");
+  }
+
+  return new TextEncoder().encode(value);
+}
 
 function getClientIp(headers: Headers) {
   const forwarded =
@@ -20,12 +32,30 @@ export async function POST(request: NextRequest) {
 
   if (!parsed.success) {
     return NextResponse.json(
-      { error: "Informe uma key válida." },
+      { error: "Escolha uma roleta válida." },
       { status: 400 }
     );
   }
 
-  const code = normalizeCode(parsed.data.code);
+  const token = request.cookies.get(ROULETTE_ACCESS_COOKIE)?.value;
+
+  if (!token) {
+    return NextResponse.json({ error: "Valide sua key novamente." }, { status: 401 });
+  }
+
+  let accessKeyId: string;
+
+  try {
+    const { payload } = await jwtVerify(token, getSecret());
+    if (payload.role !== "roulette" || !payload.sub) {
+      throw new Error("Invalid access session");
+    }
+    accessKeyId = payload.sub;
+  } catch {
+    return NextResponse.json({ error: "Valide sua key novamente." }, { status: 401 });
+  }
+
+  const { wheelNumber } = parsed.data;
   const ipAddress = getClientIp(request.headers) ?? undefined;
   const userAgent = request.headers.get("user-agent") ?? undefined;
 
@@ -33,7 +63,7 @@ export async function POST(request: NextRequest) {
     const result = await prisma.$transaction(
       async (tx) => {
         const accessKey = await tx.accessKey.findUnique({
-          where: { code }
+          where: { id: accessKeyId }
         });
 
         if (!accessKey || !accessKey.active || accessKey.deletedAt) {
@@ -56,13 +86,19 @@ export async function POST(request: NextRequest) {
         }
 
         const activeItems = await tx.wheelItem.findMany({
-          where: { active: true, deletedAt: null }
+          where: { wheelNumber, active: true, deletedAt: null }
         });
+
+        if (!activeItems.length) {
+          throw new Error("WHEEL_EMPTY");
+        }
+
         const item = pickWeightedItem(activeItems);
         const spin = await tx.spinHistory.create({
           data: {
             accessKeyId: accessKey.id,
             itemId: item.id,
+            wheelNumber,
             ipAddress,
             userAgent
           }
@@ -70,29 +106,36 @@ export async function POST(request: NextRequest) {
 
         return {
           spinId: spin.id,
-          item
+          item,
+          singleUse: accessKey.singleUse
         };
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
     );
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       spinId: result.spinId,
       item: toPublicItem(result.item)
     });
+
+    if (result.singleUse) {
+      response.cookies.delete(ROULETTE_ACCESS_COOKIE);
+    }
+    return response;
   } catch (error) {
     const message = error instanceof Error ? error.message : "UNKNOWN";
     const labels: Record<string, string> = {
       KEY_INVALID: "Key inválida ou desativada.",
       KEY_EXPIRED: "Esta key expirou.",
       KEY_USED: "Esta key já foi utilizada.",
+      WHEEL_EMPTY: "Esta roleta ainda não possui itens ativos.",
       UNKNOWN: "Não foi possível girar a roleta agora."
     };
 
     return NextResponse.json(
       { error: labels[message] ?? labels.UNKNOWN },
       {
-        status: message.startsWith("KEY_") ? 409 : 500
+        status: message.startsWith("KEY_") || message === "WHEEL_EMPTY" ? 409 : 500
       }
     );
   }
