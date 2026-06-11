@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 export default function AdminLoginPage() {
@@ -37,13 +38,18 @@ export default function AdminLoginPage() {
     <main className="admin-layout grid place-items-center px-4 py-10">
       <section className="panel w-full max-w-md p-6">
         <div className="mb-6">
-          <div className="mb-4 grid h-12 w-12 place-items-center rounded-lg border border-volt/30 bg-volt/10 text-lg font-black text-volt shadow-neon">
-            ZB
-          </div>
+          <Image
+            src="/brand/zenix-blox-logo.png"
+            alt="Zenix Blox"
+            width={321}
+            height={162}
+            priority
+            className="mb-5 h-auto w-48 drop-shadow-[0_0_18px_rgba(0,255,65,0.32)] sm:w-56"
+          />
           <p className="text-sm font-semibold uppercase tracking-[0.26em] text-volt">
             Painel seguro
           </p>
-          <h1 className="mt-2 text-3xl font-black">Admin ZenixBlox</h1>
+          <h1 className="mt-2 text-3xl font-black">Área administrativa</h1>
           <p className="mt-2 text-sm text-slate-300">
             Entre para gerenciar itens, keys e histórico de giros.
           </p>

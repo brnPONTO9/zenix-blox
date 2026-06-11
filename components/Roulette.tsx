@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
+import Image from "next/image";
 
 type WheelItem = {
   id: string;
@@ -10,6 +11,8 @@ type WheelItem = {
   rarity: string;
   probability?: number;
 };
+
+type AccessStatus = "loading" | "ready" | "used" | "blocked" | "error";
 
 const cardWidth = 156;
 const targetIndex = 64;
@@ -57,10 +60,13 @@ function getCenteredOffset(
 export function Roulette() {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
+  const hasRequestedAccessRef = useRef(false);
+  const hasLoadedItemsRef = useRef(false);
+  const isSpinningRef = useRef(false);
   const [items, setItems] = useState<WheelItem[]>([]);
   const [reel, setReel] = useState<WheelItem[]>([]);
-  const [nick, setNick] = useState("");
   const [code, setCode] = useState("");
+  const [accessStatus, setAccessStatus] = useState<AccessStatus>("loading");
   const [message, setMessage] = useState("");
   const [winner, setWinner] = useState<WheelItem | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -77,14 +83,87 @@ export function Roulette() {
   );
 
   useEffect(() => {
-    fetch("/api/items")
-      .then((response) => response.json())
-      .then((data) => {
+    let active = true;
+
+    async function refreshItems() {
+      try {
+        const response = await fetch("/api/items", { cache: "no-store" });
+        const data = await response.json();
+
+        if (!active) {
+          return;
+        }
+
         const loaded = data.items ?? [];
         setItems(loaded);
-        setReel(shuffleReel(loaded));
-      })
-      .catch(() => setMessage("Não foi possível carregar os itens da roleta."));
+        hasLoadedItemsRef.current = true;
+
+        if (!isSpinningRef.current) {
+          setReel(shuffleReel(loaded));
+        }
+      } catch {
+        if (active && !hasLoadedItemsRef.current) {
+          setMessage("Não foi possível carregar os itens da roleta.");
+        }
+      }
+    }
+
+    function refreshWhenVisible() {
+      if (document.visibilityState === "visible") {
+        void refreshItems();
+      }
+    }
+
+    void refreshItems();
+    const interval = window.setInterval(() => void refreshItems(), 2000);
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, []);
+
+  async function claimAccessKey() {
+    setAccessStatus("loading");
+
+    try {
+      const response = await fetch("/api/access-key", {
+        method: "POST",
+        cache: "no-store"
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (response.ok && data.status === "ready" && data.code) {
+        setCode(data.code);
+        setAccessStatus("ready");
+        return;
+      }
+
+      setCode("");
+      if (data.status === "used") {
+        setAccessStatus("used");
+      } else if (data.status === "blocked") {
+        setAccessStatus("blocked");
+      } else {
+        setAccessStatus("error");
+      }
+    } catch {
+      setCode("");
+      setAccessStatus("error");
+    }
+  }
+
+  useEffect(() => {
+    if (hasRequestedAccessRef.current) {
+      return;
+    }
+
+    hasRequestedAccessRef.current = true;
+    void claimAccessKey();
   }, []);
 
   async function spin(event: FormEvent<HTMLFormElement>) {
@@ -92,8 +171,8 @@ export function Roulette() {
     setMessage("");
     setWinner(null);
 
-    if (!nick.trim() || !code.trim()) {
-      setMessage("Informe seu nick e sua key para liberar o giro.");
+    if (accessStatus !== "ready" || !code) {
+      setMessage("Esta participação não está disponível.");
       return;
     }
 
@@ -103,18 +182,20 @@ export function Roulette() {
     }
 
     setIsSpinning(true);
+    isSpinningRef.current = true;
     setIsAnimating(false);
     setOffset(0);
 
     const response = await fetch("/api/spin", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nick, code })
+      body: JSON.stringify({ code })
     });
     const data = await response.json();
 
     if (!response.ok) {
       setIsSpinning(false);
+      isSpinningRef.current = false;
       setMessage(data.error ?? "Não foi possível girar a roleta.");
       return;
     }
@@ -141,8 +222,10 @@ export function Roulette() {
     window.setTimeout(() => {
       setWinner(data.item);
       setIsSpinning(false);
+      isSpinningRef.current = false;
       setIsAnimating(false);
-      setMessage(`Parabéns, ${data.nick}! Você ganhou ${data.item.name}.`);
+      setAccessStatus("used");
+      setMessage(`Parabéns! Você ganhou ${data.item.name}.`);
     }, 6100);
   }
 
@@ -172,24 +255,22 @@ export function Roulette() {
   return (
     <main className="min-h-screen overflow-x-hidden bg-obsidian text-white">
       <section className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
-        <header className="flex flex-wrap items-center justify-between gap-3">
+        <header className="flex flex-wrap items-center gap-3">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-volt/30 bg-volt/10 text-base font-black text-volt shadow-neon sm:h-11 sm:w-11 sm:text-lg">
-              ZB
-            </div>
-            <div className="min-w-0">
-              <p className="truncate text-lg font-black tracking-wide">ZenixBlox</p>
+            <Image
+              src="/brand/zenix-blox-logo.png"
+              alt="Zenix Blox"
+              width={198}
+              height={100}
+              priority
+              className="h-12 w-auto shrink-0 drop-shadow-[0_0_14px_rgba(0,255,65,0.28)] sm:h-14"
+            />
+            <div className="hidden min-w-0 sm:block">
               <p className="text-[0.65rem] uppercase tracking-[0.22em] text-slate-400 sm:text-xs sm:tracking-[0.28em]">
                 Premium Rewards
               </p>
             </div>
           </div>
-          <a
-            href="/admin"
-            className="rounded-md border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-volt/40 hover:text-white"
-          >
-            Admin
-          </a>
         </header>
 
         <div className="grid flex-1 items-start gap-5 py-6 lg:grid-cols-[minmax(320px,390px)_minmax(0,1fr)] lg:items-center lg:gap-8 lg:py-8">
@@ -202,36 +283,62 @@ export function Roulette() {
                 Gire por prêmios ZenixBlox
               </h1>
               <p className="mt-4 text-sm leading-6 text-slate-300">
-                Digite seu nick e uma key válida para participar. O resultado é
-                definido no servidor com chances configuradas pelo admin.
+                Sua participação é liberada automaticamente uma única vez. O
+                resultado é definido no servidor com chances configuradas pelo admin.
               </p>
             </div>
 
             <form onSubmit={spin} className="space-y-4">
               <label className="block">
-                <span className="field-label">Nome ou nick</span>
-                <input
-                  value={nick}
-                  onChange={(event) => setNick(event.target.value)}
-                  className="field"
-                  placeholder="Ex: PlayerZenix"
-                  maxLength={60}
-                />
-              </label>
-              <label className="block">
-                <span className="field-label">Key de acesso</span>
+                <span className="field-label">Sua key automática</span>
                 <input
                   value={code}
-                  onChange={(event) => setCode(event.target.value)}
                   className="field uppercase"
-                  placeholder="ZENIX-0000"
-                  maxLength={80}
+                  placeholder={accessStatus === "loading" ? "Liberando participação..." : "-"}
+                  readOnly
                 />
               </label>
-              <button disabled={isSpinning} className="primary-button w-full">
-                {isSpinning ? "Girando..." : "Girar Roleta"}
+              <button
+                disabled={isSpinning || accessStatus !== "ready"}
+                className="primary-button w-full"
+              >
+                {isSpinning
+                  ? "Girando..."
+                  : accessStatus === "ready"
+                    ? "Girar Roleta"
+                    : accessStatus === "used"
+                      ? "Participação utilizada"
+                      : accessStatus === "loading"
+                        ? "Liberando..."
+                        : "Participação indisponível"}
               </button>
             </form>
+
+            {accessStatus === "blocked" ? (
+              <div className="mt-4 rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
+                Uma participação já foi emitida para esta conexão. Atualizar a
+                página ou trocar de navegador não libera uma nova key.
+              </div>
+            ) : null}
+
+            {accessStatus === "used" && !winner ? (
+              <div className="mt-4 rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
+                A participação deste dispositivo já foi utilizada.
+              </div>
+            ) : null}
+
+            {accessStatus === "error" ? (
+              <div className="mt-4 rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-rose-100">
+                Não foi possível liberar a participação.
+                <button
+                  type="button"
+                  onClick={() => void claimAccessKey()}
+                  className="ml-2 font-black underline"
+                >
+                  Tentar novamente
+                </button>
+              </div>
+            ) : null}
 
             {message ? (
               <div
@@ -284,7 +391,13 @@ export function Roulette() {
                     </article>
                   ))}
                 </div>
-                {reel.length > 0 ? <div className="roulette-pointer" aria-hidden="true" /> : null}
+                {reel.length > 0 ? (
+                  <div className="roulette-pointer" aria-hidden="true">
+                    <span className="roulette-pointer-cap roulette-pointer-cap-top" />
+                    <span className="roulette-pointer-core" />
+                    <span className="roulette-pointer-cap roulette-pointer-cap-bottom" />
+                  </div>
+                ) : null}
               </div>
             </div>
 

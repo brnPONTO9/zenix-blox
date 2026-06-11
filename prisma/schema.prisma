@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Admin {
@@ -24,17 +25,28 @@ model Participant {
 }
 
 model AccessKey {
-  id          String        @id @default(cuid())
-  code        String        @unique
-  label       String?
-  singleUse   Boolean       @default(true)
-  active      Boolean       @default(true)
-  expiresAt   DateTime?
-  usedAt      DateTime?
-  deletedAt   DateTime?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  spins       SpinHistory[]
+  id        String        @id @default(cuid())
+  code      String        @unique
+  label     String?
+  singleUse Boolean       @default(true)
+  active    Boolean       @default(true)
+  expiresAt DateTime?
+  usedAt    DateTime?
+  deletedAt DateTime?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  spins     SpinHistory[]
+  autoGrant AutoKeyGrant?
+}
+
+model AutoKeyGrant {
+  id          String    @id @default(cuid())
+  deviceHash  String    @unique
+  ipHash      String?   @unique
+  accessKeyId String    @unique
+  accessKey   AccessKey @relation(fields: [accessKeyId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model WheelItem {
@@ -51,16 +63,16 @@ model WheelItem {
 }
 
 model SpinHistory {
-  id            String      @id @default(cuid())
-  participantId String
+  id            String       @id @default(cuid())
+  participantId String?
   accessKeyId   String
   itemId        String
-  participant   Participant @relation(fields: [participantId], references: [id])
-  accessKey     AccessKey   @relation(fields: [accessKeyId], references: [id])
-  item          WheelItem   @relation(fields: [itemId], references: [id])
+  participant   Participant? @relation(fields: [participantId], references: [id])
+  accessKey     AccessKey    @relation(fields: [accessKeyId], references: [id])
+  item          WheelItem    @relation(fields: [itemId], references: [id])
   ipAddress     String?
   userAgent     String?
-  createdAt     DateTime    @default(now())
+  createdAt     DateTime     @default(now())
 
   @@index([createdAt])
   @@index([accessKeyId])
@@ -73,4 +85,11 @@ model GeneralSetting {
   value     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model UploadedImage {
+  id        String   @id @default(cuid())
+  data      Bytes
+  mimeType  String
+  createdAt DateTime @default(now())
 }

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ZenixBlox Roulette",
-  description: "Roleta de prêmios oficial ZenixBlox."
+  title: "Zenix Blox",
+  description: "Experiência oficial Zenix Blox."
 };
 
 export default function RootLayout({

@@ -22,7 +22,6 @@ export const keySchema = z.object({
 });
 
 export const spinSchema = z.object({
-  nick: z.string().trim().min(2).max(60),
   code: z.string().trim().min(3).max(80)
 });
 

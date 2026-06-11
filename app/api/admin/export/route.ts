@@ -16,18 +16,16 @@ export async function GET() {
   const spins = await prisma.spinHistory.findMany({
     orderBy: { createdAt: "desc" },
     include: {
-      participant: true,
       accessKey: true,
       item: true
     }
   });
 
   const rows = [
-    ["ID", "Nick", "Key", "Item", "Raridade", "Data", "IP"].map(csv).join(","),
+    ["ID", "Key", "Item", "Raridade", "Data", "IP"].map(csv).join(","),
     ...spins.map((spin) =>
       [
         spin.id,
-        spin.participant.nick,
         spin.accessKey.code,
         spin.item.name,
         spin.item.rarity,

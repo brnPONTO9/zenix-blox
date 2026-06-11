@@ -12,7 +12,6 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
     take: 300,
     include: {
-      participant: true,
       accessKey: true,
       item: true
     }
@@ -21,7 +20,6 @@ export async function GET() {
   return NextResponse.json({
     spins: spins.map((spin) => ({
       id: spin.id,
-      nick: spin.participant.nick,
       key: spin.accessKey.code,
       item: spin.item.name,
       rarity: spin.item.rarity,

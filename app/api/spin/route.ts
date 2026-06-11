@@ -1,28 +1,37 @@
-import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
+import { NextRequest, NextResponse } from "next/server";
+import {
+  getClientIp,
+  hashIdentity,
+  isValidDeviceToken
+} from "@/lib/client-identity";
+import { AUTO_KEY_COOKIE } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 import { pickWeightedItem, toPublicItem } from "@/lib/roulette";
 import { normalizeCode, spinSchema } from "@/lib/validation";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const parsed = spinSchema.safeParse(body);
 
   if (!parsed.success) {
     return NextResponse.json(
-      { error: "Informe um nick e uma key válida." },
+      { error: "Informe uma key válida." },
       { status: 400 }
     );
   }
 
   const code = normalizeCode(parsed.data.code);
-  const ipAddress = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const ipAddress = getClientIp(request.headers) ?? undefined;
   const userAgent = request.headers.get("user-agent") ?? undefined;
 
   try {
     const result = await prisma.$transaction(
       async (tx) => {
-        const accessKey = await tx.accessKey.findUnique({ where: { code } });
+        const accessKey = await tx.accessKey.findUnique({
+          where: { code },
+          include: { autoGrant: true }
+        });
 
         if (!accessKey || !accessKey.active || accessKey.deletedAt) {
           throw new Error("KEY_INVALID");
@@ -30,6 +39,17 @@ export async function POST(request: Request) {
 
         if (accessKey.expiresAt && accessKey.expiresAt < new Date()) {
           throw new Error("KEY_EXPIRED");
+        }
+
+        if (accessKey.autoGrant) {
+          const deviceToken = request.cookies.get(AUTO_KEY_COOKIE)?.value;
+
+          if (
+            !isValidDeviceToken(deviceToken) ||
+            hashIdentity(`device:${deviceToken}`) !== accessKey.autoGrant.deviceHash
+          ) {
+            throw new Error("KEY_DEVICE");
+          }
         }
 
         if (accessKey.singleUse) {
@@ -47,12 +67,8 @@ export async function POST(request: Request) {
           where: { active: true, deletedAt: null }
         });
         const item = pickWeightedItem(activeItems);
-        const participant = await tx.participant.create({
-          data: { nick: parsed.data.nick }
-        });
         const spin = await tx.spinHistory.create({
           data: {
-            participantId: participant.id,
             accessKeyId: accessKey.id,
             itemId: item.id,
             ipAddress,
@@ -62,7 +78,6 @@ export async function POST(request: Request) {
 
         return {
           spinId: spin.id,
-          participant,
           item
         };
       },
@@ -71,7 +86,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       spinId: result.spinId,
-      nick: result.participant.nick,
       item: toPublicItem(result.item)
     });
   } catch (error) {
@@ -80,12 +94,20 @@ export async function POST(request: Request) {
       KEY_INVALID: "Key inválida ou desativada.",
       KEY_EXPIRED: "Esta key expirou.",
       KEY_USED: "Esta key já foi utilizada.",
+      KEY_DEVICE: "Esta key pertence a outro dispositivo.",
       UNKNOWN: "Não foi possível girar a roleta agora."
     };
 
     return NextResponse.json(
       { error: labels[message] ?? labels.UNKNOWN },
-      { status: message.startsWith("KEY_") ? 409 : 500 }
+      {
+        status:
+          message === "KEY_DEVICE"
+            ? 403
+            : message.startsWith("KEY_")
+              ? 409
+              : 500
+      }
     );
   }
 }

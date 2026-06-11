@@ -15,16 +15,20 @@ Sistema web completo para roleta de prêmios da ZenixBlox, com frontend público
 ## Funcionalidades
 
 - Roleta pública estilo CSGO com animação horizontal.
-- Giro liberado somente com nick e key válida.
+- Key de uso único liberada automaticamente na primeira visita.
+- Atualizar a página recupera a mesma key; outro navegador na mesma conexão é bloqueado.
+- A key automática fica vinculada ao cookie seguro do dispositivo que a recebeu.
 - Sorteio ponderado no backend, sem confiar no navegador.
 - Keys de uso único ou reutilizáveis.
 - Proteção contra reutilização de key de uso único com transação no banco.
 - Admin com login, cookie httpOnly e middleware de proteção.
 - CRUD de itens da roleta.
+- Upload de imagens dos itens por clique ou arrastar e soltar, com armazenamento no PostgreSQL.
+- Sincronização automática de itens, keys e histórico sem precisar atualizar a página.
 - CRUD de keys.
-- Histórico de giros com nick, key, prêmio e data.
+- Histórico de giros com key, prêmio e data.
 - Exportação de histórico em CSV compatível com Excel.
-- Seed inicial com admin, itens e keys de teste.
+- Seed inicial seguro com admin e itens; keys de teste são opcionais.
 
 ## Instalação local
 
@@ -75,10 +79,10 @@ Acesse:
 - Roleta: `http://localhost:3000`
 - Admin: `http://localhost:3000/admin`
 
-Credenciais iniciais do seed:
+Credenciais iniciais do seed são definidas no arquivo `.env`:
 
-- E-mail: `admin@zenixblox.com`
-- Senha: `ZenixBlox@123`
+- E-mail: valor de `SEED_ADMIN_EMAIL`
+- Senha: valor de `SEED_ADMIN_PASSWORD`
 
 Keys iniciais:
 
@@ -92,31 +96,17 @@ Configure as variáveis:
 
 ```env
 DATABASE_URL="postgresql://usuario:senha@host:5432/zenixblox?schema=public"
+DIRECT_URL="postgresql://usuario:senha@host:5432/zenixblox?schema=public"
 AUTH_SECRET="uma-chave-segura-com-pelo-menos-32-caracteres"
-APP_URL="https://seudominio.com"
 SEED_ADMIN_EMAIL="admin@zenixblox.com"
 SEED_ADMIN_PASSWORD="troque-esta-senha"
 ```
 
-Execute no deploy:
-
-```bash
-npm install
-npm run db:deploy
-npm run db:seed
-npm run build
-npm run start
-```
-
 ## Deploy sugerido
 
-### Railway ou Render
+### Render Free + Neon Free
 
-1. Crie um banco PostgreSQL.
-2. Configure `DATABASE_URL` e `AUTH_SECRET`.
-3. Build command: `npm run build`
-4. Start command: `npm run start`
-5. Antes do primeiro start, rode `npm run db:deploy` e `npm run db:seed`.
+O projeto inclui `render.yaml`, health check, migrations e seed automático. Siga o guia completo em [DEPLOY_GRATIS.md](DEPLOY_GRATIS.md).
 
 ### Vercel
 
@@ -138,4 +128,6 @@ npm run start
 - Troque a senha admin logo após o primeiro login.
 - Use HTTPS para proteger cookies.
 - Não exponha `DATABASE_URL`.
+- Use uma hospedagem ou proxy que informe o IP real em `X-Forwarded-For`, `X-Real-IP` ou `CF-Connecting-IP`.
+- Sem autenticação pessoal, trocar de rede ou usar VPN não pode ser impedido de forma absoluta.
 - O sorteio acontece em `/api/spin`, dentro de transação serializável, e o frontend apenas anima o resultado recebido.

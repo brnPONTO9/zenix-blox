@@ -61,9 +61,12 @@ export async function DELETE(_request: Request, context: RouteContext) {
 
   const { id } = await context.params;
 
-  await prisma.accessKey.update({
-    where: { id },
-    data: { active: false, deletedAt: new Date() }
+  await prisma.$transaction(async (tx) => {
+    await tx.autoKeyGrant.deleteMany({ where: { accessKeyId: id } });
+    await tx.accessKey.update({
+      where: { id },
+      data: { active: false, deletedAt: new Date() }
+    });
   });
 
   return NextResponse.json({ ok: true });
