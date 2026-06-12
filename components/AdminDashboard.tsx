@@ -610,7 +610,7 @@ export function AdminDashboard() {
           Ativo
         </label>
 
-        <div className="grid gap-2 sm:col-span-2 sm:grid-cols-2">
+        <div className="admin-form-actions sm:col-span-2">
           <button
             disabled={actionLoading === "item-form" || imageUploading}
             className="primary-button"
@@ -645,7 +645,7 @@ export function AdminDashboard() {
           </p>
         </div>
 
-        <div className="flex flex-col gap-2 sm:col-span-2 sm:flex-row">
+        <div className="flex min-w-0 flex-col gap-2 sm:col-span-2 sm:flex-row">
           <input
             className="field uppercase"
             placeholder="Código"
@@ -655,7 +655,7 @@ export function AdminDashboard() {
           <button
             type="button"
             onClick={() => setKeyForm({ ...keyForm, code: generateCode() })}
-            className="ghost-button sm:w-auto"
+            className="ghost-button w-full sm:w-auto"
           >
             Gerar
           </button>
@@ -696,7 +696,7 @@ export function AdminDashboard() {
           Ativa
         </label>
 
-        <div className="grid gap-2 sm:col-span-2 sm:grid-cols-2">
+        <div className="admin-form-actions sm:col-span-2">
           <button
             disabled={actionLoading === "key-form"}
             className="primary-button"
@@ -734,8 +734,8 @@ export function AdminDashboard() {
               </p>
             </div>
           </div>
-          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
-            <Link href="/" className="ghost-button inline-flex items-center">
+          <div className="admin-top-actions">
+            <Link href="/" className="ghost-button">
               Ver roleta
             </Link>
             <button onClick={logout} className="ghost-button">
@@ -791,7 +791,7 @@ export function AdminDashboard() {
                     key={wheelNumber}
                     className="rounded-xl border border-white/10 bg-black/20 p-3 sm:p-4"
                   >
-                    <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="admin-block-header">
                       <div>
                         <h3 className="text-lg font-black text-white">
                           Roleta {wheelNumber}
@@ -803,7 +803,7 @@ export function AdminDashboard() {
                       <button
                         type="button"
                         onClick={() => addItemToWheel(wheelNumber)}
-                        className="ghost-button"
+                        className="ghost-button admin-block-action"
                       >
                         {openItemWheel === wheelNumber && !editingItemId
                           ? "Fechar cadastro"
@@ -837,7 +837,7 @@ export function AdminDashboard() {
                                 </div>
                               </div>
                             </div>
-                            <div className="admin-actions mt-3">
+                            <div className="admin-card-actions mt-3">
                               <button
                                 type="button"
                                 disabled={Boolean(actionLoading)}
@@ -892,7 +892,7 @@ export function AdminDashboard() {
                     key={wheelNumber}
                     className="rounded-xl border border-white/10 bg-black/20 p-3 sm:p-4"
                   >
-                    <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="admin-block-header">
                       <div>
                         <h3 className="text-lg font-black text-white">
                           Roleta {wheelNumber}
@@ -904,7 +904,7 @@ export function AdminDashboard() {
                       <button
                         type="button"
                         onClick={() => addKeyToWheel(wheelNumber)}
-                        className="ghost-button"
+                        className="ghost-button admin-block-action"
                       >
                         {openKeyWheel === wheelNumber && !editingKeyId
                           ? "Fechar cadastro"
@@ -921,7 +921,7 @@ export function AdminDashboard() {
                             key={key.id}
                             className="rounded-lg border border-white/10 bg-white/[0.035] p-3"
                           >
-                            <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                            <div className="admin-key-header">
                               <div className="min-w-0">
                                 <div className="break-all font-mono font-bold text-white">
                                   {key.code}
@@ -934,7 +934,7 @@ export function AdminDashboard() {
                               <button
                                 type="button"
                                 onClick={() => void copyKey(key)}
-                                className="ghost-button"
+                                className="ghost-button admin-copy-button"
                               >
                                 {copiedKeyId === key.id ? "Copiada!" : "Copiar"}
                               </button>
@@ -950,7 +950,7 @@ export function AdminDashboard() {
                               {key.label ? <div>Rótulo: {key.label}</div> : null}
                             </div>
 
-                            <div className="admin-actions mt-3">
+                            <div className="admin-card-actions mt-3">
                               <button
                                 type="button"
                                 disabled={Boolean(actionLoading)}
@@ -986,9 +986,9 @@ export function AdminDashboard() {
         </section>
 
         <section className="admin-card mt-6">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="admin-history-header">
             <h2 className="text-xl font-black">Histórico de giros</h2>
-            <div className="admin-actions">
+            <div className="admin-history-actions">
               <a href="/api/admin/export" className="ghost-button">
                 Exportar CSV
               </a>
@@ -1004,7 +1004,7 @@ export function AdminDashboard() {
           </div>
 
           <div className="overflow-auto">
-            <table className="admin-table">
+            <table className="admin-table admin-history-table">
               <thead>
                 <tr>
                   <th>Key</th>
@@ -1017,14 +1017,14 @@ export function AdminDashboard() {
               <tbody>
                 {spins.map((spin) => (
                   <tr key={spin.id}>
-                    <td className="font-mono">{spin.key}</td>
-                    <td>
+                    <td data-label="Key" className="font-mono">{spin.key}</td>
+                    <td data-label="Prêmio">
                       {spin.item}
                       <span className="ml-2 text-xs text-slate-400">{spin.rarity}</span>
                     </td>
-                    <td>Roleta {spin.wheelNumber}</td>
-                    <td>{formatDate(spin.createdAt)}</td>
-                    <td>
+                    <td data-label="Roleta">Roleta {spin.wheelNumber}</td>
+                    <td data-label="Data">{formatDate(spin.createdAt)}</td>
+                    <td data-label="Ações">
                       <div className="admin-actions">
                         <button
                           type="button"

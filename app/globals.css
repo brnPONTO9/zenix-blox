@@ -377,6 +377,51 @@ img {
   white-space: nowrap;
 }
 
+.admin-top-actions,
+.admin-form-actions,
+.admin-card-actions,
+.admin-history-actions {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.admin-top-actions,
+.admin-card-actions,
+.admin-history-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-form-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-top-actions {
+  width: 100%;
+}
+
+.admin-top-actions > *,
+.admin-form-actions > *,
+.admin-card-actions > *,
+.admin-history-actions > * {
+  width: 100%;
+  min-width: 0;
+}
+
+.admin-block-header,
+.admin-key-header,
+.admin-history-header {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.admin-key-header > div {
+  min-width: 0;
+}
+
 .admin-wheel-list {
   display: grid;
   max-height: 420px;
@@ -414,6 +459,17 @@ img {
   opacity: 0.55;
 }
 
+@media (min-width: 640px) {
+  .admin-top-actions {
+    display: flex;
+    width: auto;
+  }
+
+  .admin-top-actions > * {
+    width: auto;
+  }
+}
+
 @media (max-width: 700px) {
   .roulette-grid {
     grid-template-columns: 1fr;
@@ -429,8 +485,80 @@ img {
     padding: 0.85rem;
   }
 
-  .admin-table {
-    min-width: 620px;
+  .admin-card {
+    padding: 0.85rem;
+  }
+
+  .admin-block-header,
+  .admin-key-header,
+  .admin-history-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-block-action,
+  .admin-copy-button {
+    width: 100%;
+  }
+
+  .admin-history-actions {
+    width: 100%;
+  }
+
+  .admin-wheel-list {
+    max-height: 360px;
+    padding-right: 0.15rem;
+  }
+
+  .admin-history-table {
+    min-width: 0;
+  }
+
+  .admin-history-table thead {
+    display: none;
+  }
+
+  .admin-history-table,
+  .admin-history-table tbody,
+  .admin-history-table tr,
+  .admin-history-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .admin-history-table tbody {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .admin-history-table tr {
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.035);
+    padding: 0.75rem;
+  }
+
+  .admin-history-table td {
+    display: grid;
+    grid-template-columns: minmax(76px, 0.32fr) minmax(0, 1fr);
+    gap: 0.75rem;
+    border: 0;
+    padding: 0.38rem 0;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-history-table td::before {
+    content: attr(data-label);
+    color: rgb(148 163 184);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .admin-history-table .admin-actions,
+  .admin-history-table .ghost-button {
+    width: 100%;
   }
 }
 
@@ -442,6 +570,25 @@ img {
 
   .primary-button {
     min-height: 46px;
+  }
+
+  .ghost-button {
+    min-height: 44px;
+    padding-inline: 0.65rem;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .admin-top-actions,
+  .admin-form-actions,
+  .admin-card-actions,
+  .admin-history-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-history-table td {
+    grid-template-columns: 68px minmax(0, 1fr);
+    gap: 0.55rem;
   }
 
   .roulette-card p {
