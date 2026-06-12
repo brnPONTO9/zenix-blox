@@ -287,34 +287,36 @@ export function Roulette({ wheelNumber }: RouletteProps) {
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-obsidian px-3 py-4 text-white sm:px-5 sm:py-5">
-      <div className="mx-auto mb-3 flex w-full max-w-[1500px] justify-end">
-        <button
-          type="button"
-          onClick={() => void changeKey()}
-          disabled={activeWheel !== null || changingKey}
-          className="ghost-button"
-        >
-          {changingKey ? "Voltando..." : "Usar outra key"}
-        </button>
-      </div>
+    <main className="flex min-h-screen min-h-[100dvh] items-center overflow-x-hidden bg-obsidian px-3 py-4 text-white sm:px-5 sm:py-5">
+      <div className="mx-auto w-full max-w-[1500px]">
+        <div className="mb-3 flex w-full justify-end">
+          <button
+            type="button"
+            onClick={() => void changeKey()}
+            disabled={activeWheel !== null || changingKey}
+            className="ghost-button"
+          >
+            {changingKey ? "Voltando..." : "Usar outra key"}
+          </button>
+        </div>
 
-      <div className="roulette-grid roulette-grid-single mx-auto w-full max-w-[1500px]">
-        <WheelLane
-          wheelNumber={wheelNumber}
-          items={wheelItems}
-          spinLocked={activeWheel !== null}
-          accessEnded={accessEnded}
-          onSpinStart={(number) => {
-            setMessage("");
-            setActiveWheel(number);
-          }}
-          onSpinEnd={(nextMessage, ended) => {
-            setMessage(nextMessage);
-            setAccessEnded(ended);
-            setActiveWheel(null);
-          }}
-        />
+        <div className="roulette-grid roulette-grid-single w-full">
+          <WheelLane
+            wheelNumber={wheelNumber}
+            items={wheelItems}
+            spinLocked={activeWheel !== null}
+            accessEnded={accessEnded}
+            onSpinStart={(number) => {
+              setMessage("");
+              setActiveWheel(number);
+            }}
+            onSpinEnd={(nextMessage, ended) => {
+              setMessage(nextMessage);
+              setAccessEnded(ended);
+              setActiveWheel(null);
+            }}
+          />
+        </div>
       </div>
 
       {message ? (
