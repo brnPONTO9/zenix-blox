@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 type WheelItem = {
   id: string;
@@ -211,9 +212,11 @@ type RouletteProps = {
 };
 
 export function Roulette({ wheelNumber }: RouletteProps) {
+  const router = useRouter();
   const [items, setItems] = useState<WheelItem[]>([]);
   const [activeWheel, setActiveWheel] = useState<number | null>(null);
   const [accessEnded, setAccessEnded] = useState(false);
+  const [changingKey, setChangingKey] = useState(false);
   const [message, setMessage] = useState("");
   const wheelItems = useMemo(
     () => items.filter((item) => item.wheelNumber === wheelNumber),
@@ -268,8 +271,34 @@ export function Roulette({ wheelNumber }: RouletteProps) {
     };
   }, []);
 
+  async function changeKey() {
+    if (activeWheel !== null || changingKey) {
+      return;
+    }
+
+    setChangingKey(true);
+
+    try {
+      await fetch("/api/access/logout", { method: "POST" });
+    } finally {
+      router.push("/");
+      router.refresh();
+    }
+  }
+
   return (
     <main className="min-h-screen overflow-x-hidden bg-obsidian px-3 py-4 text-white sm:px-5 sm:py-5">
+      <div className="mx-auto mb-3 flex w-full max-w-[1500px] justify-end">
+        <button
+          type="button"
+          onClick={() => void changeKey()}
+          disabled={activeWheel !== null || changingKey}
+          className="ghost-button"
+        >
+          {changingKey ? "Voltando..." : "Usar outra key"}
+        </button>
+      </div>
+
       <div className="roulette-grid roulette-grid-single mx-auto w-full max-w-[1500px]">
         <WheelLane
           wheelNumber={wheelNumber}
