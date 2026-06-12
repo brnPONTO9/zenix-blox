@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { Roulette } from "@/components/Roulette";
 import { readRouletteAccessSession } from "@/lib/auth";
 
 export default async function RoulettePage() {
@@ -9,5 +8,5 @@ export default async function RoulettePage() {
     redirect("/");
   }
 
-  return <Roulette />;
+  redirect(`/roleta/${accessKey.wheelNumber}`);
 }

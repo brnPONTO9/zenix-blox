@@ -27,6 +27,7 @@ type AccessKey = {
   id: string;
   code: string;
   label: string | null;
+  wheelNumber: number;
   singleUse: boolean;
   active: boolean;
   expiresAt: string | null;
@@ -55,6 +56,7 @@ const emptyItem = {
 const emptyKey = {
   code: "",
   label: "",
+  wheelNumber: "1",
   singleUse: true,
   active: true,
   expiresAt: ""
@@ -277,6 +279,7 @@ export function AdminDashboard() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...keyForm,
+        wheelNumber: Number(keyForm.wheelNumber),
         expiresAt: keyForm.expiresAt ? new Date(keyForm.expiresAt).toISOString() : ""
       })
     });
@@ -396,6 +399,7 @@ export function AdminDashboard() {
     setKeyForm({
       code: key.code,
       label: key.label ?? "",
+      wheelNumber: String(key.wheelNumber),
       singleUse: key.singleUse,
       active: key.active,
       expiresAt: key.expiresAt ? key.expiresAt.slice(0, 16) : ""
@@ -662,6 +666,18 @@ export function AdminDashboard() {
                 value={keyForm.label}
                 onChange={(event) => setKeyForm({ ...keyForm, label: event.target.value })}
               />
+              <select
+                className="field"
+                value={keyForm.wheelNumber}
+                onChange={(event) =>
+                  setKeyForm({ ...keyForm, wheelNumber: event.target.value })
+                }
+              >
+                <option value="1">Liberar Roleta 1</option>
+                <option value="2">Liberar Roleta 2</option>
+                <option value="3">Liberar Roleta 3</option>
+                <option value="4">Liberar Roleta 4</option>
+              </select>
               <input
                 className="field"
                 type="datetime-local"
@@ -701,6 +717,7 @@ export function AdminDashboard() {
                   <tr>
                     <th>Key</th>
                     <th>Uso</th>
+                    <th>Roleta</th>
                     <th>Expira</th>
                     <th>Ações</th>
                   </tr>
@@ -717,6 +734,7 @@ export function AdminDashboard() {
                         </div>
                       </td>
                       <td>{key.singleUse ? "Único" : "Reutilizável"}</td>
+                      <td>Roleta {key.wheelNumber}</td>
                       <td>{formatDate(key.expiresAt)}</td>
                       <td>
                         <div className="admin-actions">

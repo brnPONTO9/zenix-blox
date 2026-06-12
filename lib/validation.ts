@@ -17,6 +17,7 @@ export const itemSchema = z.object({
 export const keySchema = z.object({
   code: z.string().trim().min(3).max(80),
   label: z.string().trim().max(120).optional().nullable(),
+  wheelNumber: z.coerce.number().int().min(1).max(4),
   singleUse: z.coerce.boolean().default(true),
   active: z.coerce.boolean().default(true),
   expiresAt: z.string().datetime().optional().nullable().or(z.literal(""))

@@ -31,8 +31,11 @@ export async function createAdminToken(adminId: string) {
     .sign(getSecret());
 }
 
-export async function createRouletteAccessToken(accessKeyId: string) {
-  return new SignJWT({ role: "roulette" })
+export async function createRouletteAccessToken(
+  accessKeyId: string,
+  wheelNumber: number
+) {
+  return new SignJWT({ role: "roulette", wheelNumber })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(accessKeyId)
     .setIssuedAt()
@@ -50,7 +53,11 @@ export async function readRouletteAccessSession() {
 
   try {
     const { payload } = await jwtVerify(token, getSecret());
-    if (payload.role !== "roulette" || !payload.sub) {
+    if (
+      payload.role !== "roulette" ||
+      !payload.sub ||
+      typeof payload.wheelNumber !== "number"
+    ) {
       return null;
     }
 
@@ -63,7 +70,8 @@ export async function readRouletteAccessSession() {
       !accessKey.active ||
       accessKey.deletedAt ||
       (accessKey.expiresAt && accessKey.expiresAt < new Date()) ||
-      (accessKey.singleUse && accessKey.usedAt)
+      (accessKey.singleUse && accessKey.usedAt) ||
+      accessKey.wheelNumber !== payload.wheelNumber
     ) {
       return null;
     }

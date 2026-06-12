@@ -28,8 +28,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Esta key já foi utilizada." }, { status: 401 });
   }
 
-  const token = await createRouletteAccessToken(accessKey.id);
-  const response = NextResponse.json({ ok: true });
+  const token = await createRouletteAccessToken(
+    accessKey.id,
+    accessKey.wheelNumber
+  );
+  const redirectTo = `/roleta/${accessKey.wheelNumber}`;
+  const response = NextResponse.json({
+    ok: true,
+    wheelNumber: accessKey.wheelNumber,
+    redirectTo
+  });
 
   response.cookies.set(ROULETTE_ACCESS_COOKIE, token, {
     httpOnly: true,

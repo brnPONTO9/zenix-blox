@@ -206,17 +206,18 @@ function WheelLane({
   );
 }
 
-export function Roulette() {
+type RouletteProps = {
+  wheelNumber: number;
+};
+
+export function Roulette({ wheelNumber }: RouletteProps) {
   const [items, setItems] = useState<WheelItem[]>([]);
   const [activeWheel, setActiveWheel] = useState<number | null>(null);
   const [accessEnded, setAccessEnded] = useState(false);
   const [message, setMessage] = useState("");
-  const itemsByWheel = useMemo(
-    () =>
-      [1, 2, 3, 4].map((wheelNumber) =>
-        items.filter((item) => item.wheelNumber === wheelNumber)
-      ),
-    [items]
+  const wheelItems = useMemo(
+    () => items.filter((item) => item.wheelNumber === wheelNumber),
+    [items, wheelNumber]
   );
 
   useEffect(() => {
@@ -269,25 +270,22 @@ export function Roulette() {
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-obsidian px-3 py-4 text-white sm:px-5 sm:py-5">
-      <div className="roulette-grid mx-auto w-full max-w-[1500px]">
-        {[1, 2, 3, 4].map((wheelNumber) => (
-          <WheelLane
-            key={wheelNumber}
-            wheelNumber={wheelNumber}
-            items={itemsByWheel[wheelNumber - 1]}
-            spinLocked={activeWheel !== null}
-            accessEnded={accessEnded}
-            onSpinStart={(number) => {
-              setMessage("");
-              setActiveWheel(number);
-            }}
-            onSpinEnd={(nextMessage, ended) => {
-              setMessage(nextMessage);
-              setAccessEnded(ended);
-              setActiveWheel(null);
-            }}
-          />
-        ))}
+      <div className="roulette-grid roulette-grid-single mx-auto w-full max-w-[1500px]">
+        <WheelLane
+          wheelNumber={wheelNumber}
+          items={wheelItems}
+          spinLocked={activeWheel !== null}
+          accessEnded={accessEnded}
+          onSpinStart={(number) => {
+            setMessage("");
+            setActiveWheel(number);
+          }}
+          onSpinEnd={(nextMessage, ended) => {
+            setMessage(nextMessage);
+            setAccessEnded(ended);
+            setActiveWheel(null);
+          }}
+        />
       </div>
 
       {message ? (

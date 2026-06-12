@@ -77,7 +77,7 @@ npm run dev
 Acesse:
 
 - Entrada da key: `http://localhost:3000`
-- Roletas: `http://localhost:3000/roleta` (requer uma key validada)
+- Roletas: `http://localhost:3000/roleta/1` até `/roleta/4` (cada key libera apenas uma)
 - Admin: `http://localhost:3000/admin`
 
 Credenciais iniciais do seed são definidas no arquivo `.env`:

@@ -34,7 +34,7 @@ export function AccessGate() {
         return;
       }
 
-      router.push("/roleta");
+      router.push(data.redirectTo ?? `/roleta/${data.wheelNumber}`);
       router.refresh();
     } catch {
       setMessage("Não foi possível validar esta key agora.");
@@ -59,11 +59,11 @@ export function AccessGate() {
 
         <div className="mt-6 text-center">
           <p className="text-xs font-bold uppercase tracking-[0.28em] text-volt">
-            Acesso às roletas
+            Acesso à roleta
           </p>
           <h1 className="mt-3 text-3xl font-black">Digite sua key</h1>
           <p className="mt-3 text-sm leading-6 text-slate-300">
-            Valide sua key para escolher uma das quatro roletas disponíveis.
+            Sua key abrirá automaticamente a roleta correspondente.
           </p>
         </div>
 
@@ -84,7 +84,7 @@ export function AccessGate() {
             disabled={loading || !code.trim()}
             className="primary-button w-full"
           >
-            {loading ? "Validando..." : "Entrar nas roletas"}
+            {loading ? "Validando..." : "Entrar na roleta"}
           </button>
         </form>
 

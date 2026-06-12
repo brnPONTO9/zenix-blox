@@ -11,6 +11,7 @@ function serializeKey(key: {
   id: string;
   code: string;
   label: string | null;
+  wheelNumber: number;
   singleUse: boolean;
   active: boolean;
   expiresAt: Date | null;
@@ -44,6 +45,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     data: {
       code: normalizeCode(parsed.data.code),
       label: parsed.data.label || null,
+      wheelNumber: parsed.data.wheelNumber,
       singleUse: parsed.data.singleUse,
       active: parsed.data.active,
       expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null

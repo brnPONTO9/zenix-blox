@@ -74,6 +74,10 @@ export async function POST(request: NextRequest) {
           throw new Error("KEY_EXPIRED");
         }
 
+        if (accessKey.wheelNumber !== wheelNumber) {
+          throw new Error("WHEEL_FORBIDDEN");
+        }
+
         if (accessKey.singleUse) {
           const markUsed = await tx.accessKey.updateMany({
             where: { id: accessKey.id, usedAt: null },
@@ -125,6 +129,19 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     const message = error instanceof Error ? error.message : "UNKNOWN";
+
+    if (message === "WHEEL_FORBIDDEN") {
+      const response = NextResponse.json(
+        {
+          error: "Esta key nao pertence a esta roleta.",
+          accessEnded: true
+        },
+        { status: 409 }
+      );
+      response.cookies.delete(ROULETTE_ACCESS_COOKIE);
+      return response;
+    }
+
     const labels: Record<string, string> = {
       KEY_INVALID: "Key inválida ou desativada.",
       KEY_EXPIRED: "Esta key expirou.",

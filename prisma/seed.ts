@@ -74,9 +74,24 @@ async function main() {
 
   if (process.env.SEED_DEMO_DATA === "true") {
     const keys = [
-      { code: "ZENIX-DEMO-1", label: "Demo uso unico", singleUse: true },
-      { code: "ZENIX-DEMO-2", label: "Demo uso unico", singleUse: true },
-      { code: "ZENIX-REUSE", label: "Demo reutilizavel", singleUse: false }
+      {
+        code: "ZENIX-DEMO-1",
+        label: "Demo uso unico",
+        wheelNumber: 1,
+        singleUse: true
+      },
+      {
+        code: "ZENIX-DEMO-2",
+        label: "Demo uso unico",
+        wheelNumber: 2,
+        singleUse: true
+      },
+      {
+        code: "ZENIX-REUSE",
+        label: "Demo reutilizavel",
+        wheelNumber: 1,
+        singleUse: false
+      }
     ];
 
     for (const key of keys) {

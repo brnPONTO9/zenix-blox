@@ -24,17 +24,20 @@ model Participant {
 }
 
 model AccessKey {
-  id        String        @id @default(cuid())
-  code      String        @unique
-  label     String?
-  singleUse Boolean       @default(true)
-  active    Boolean       @default(true)
-  expiresAt DateTime?
-  usedAt    DateTime?
-  deletedAt DateTime?
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  spins     SpinHistory[]
+  id          String        @id @default(cuid())
+  code        String        @unique
+  label       String?
+  wheelNumber Int           @default(1)
+  singleUse   Boolean       @default(true)
+  active      Boolean       @default(true)
+  expiresAt   DateTime?
+  usedAt      DateTime?
+  deletedAt   DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  spins       SpinHistory[]
+
+  @@index([wheelNumber, active, deletedAt])
 }
 
 model WheelItem {

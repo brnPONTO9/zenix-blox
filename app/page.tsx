@@ -6,7 +6,7 @@ export default async function Home() {
   const accessKey = await readRouletteAccessSession();
 
   if (accessKey) {
-    redirect("/roleta");
+    redirect(`/roleta/${accessKey.wheelNumber}`);
   }
 
   return <AccessGate />;

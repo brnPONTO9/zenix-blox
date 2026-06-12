@@ -145,6 +145,10 @@ img {
   gap: 1rem;
 }
 
+.roulette-grid-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .roulette-unit {
   display: grid;
   min-width: 0;

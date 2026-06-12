@@ -20,9 +20,20 @@ export async function middleware(request: NextRequest) {
 
     try {
       const { payload } = await jwtVerify(token, key);
-      if (payload.role !== "roulette") {
+      if (
+        payload.role !== "roulette" ||
+        typeof payload.wheelNumber !== "number" ||
+        payload.wheelNumber < 1 ||
+        payload.wheelNumber > 4
+      ) {
         throw new Error("Invalid role");
       }
+
+      const wheelPath = `/roleta/${payload.wheelNumber}`;
+      if (pathname !== wheelPath) {
+        return NextResponse.redirect(new URL(wheelPath, request.url));
+      }
+
       return NextResponse.next();
     } catch {
       return NextResponse.redirect(new URL("/", request.url));
