@@ -62,6 +62,8 @@ const emptyKey = {
   expiresAt: ""
 };
 
+const wheelNumbers = [1, 2, 3, 4] as const;
+
 function formatDate(value: string | null) {
   if (!value) {
     return "-";
@@ -96,7 +98,10 @@ export function AdminDashboard() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
   const [isDraggingImage, setIsDraggingImage] = useState(false);
+  const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const itemFormRef = useRef<HTMLFormElement | null>(null);
+  const keyFormRef = useRef<HTMLFormElement | null>(null);
   const syncInFlightRef = useRef(false);
 
   const stats = useMemo(
@@ -209,7 +214,7 @@ export function AdminDashboard() {
         ? current.map((item) => (item.id === currentEditingId ? data.item : item))
         : [data.item, ...current]
     );
-    setItemForm(emptyItem);
+    setItemForm({ ...emptyItem, wheelNumber: itemForm.wheelNumber });
     setEditingItemId(null);
     setMessage("Item salvo com sucesso.");
     setActionLoading(null);
@@ -296,7 +301,7 @@ export function AdminDashboard() {
         ? current.map((key) => (key.id === currentEditingId ? data.key : key))
         : [data.key, ...current]
     );
-    setKeyForm(emptyKey);
+    setKeyForm({ ...emptyKey, wheelNumber: keyForm.wheelNumber });
     setEditingKeyId(null);
     setMessage("Key salva com sucesso.");
     setActionLoading(null);
@@ -342,6 +347,31 @@ export function AdminDashboard() {
     }
     setMessage("Key removida com sucesso.");
     setActionLoading(null);
+  }
+
+  async function copyKey(key: AccessKey) {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(key.code);
+      } else {
+        const input = document.createElement("textarea");
+        input.value = key.code;
+        input.style.position = "fixed";
+        input.style.opacity = "0";
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand("copy");
+        input.remove();
+      }
+
+      setCopiedKeyId(key.id);
+      setMessage(`Key da Roleta ${key.wheelNumber} copiada.`);
+      window.setTimeout(() => {
+        setCopiedKeyId((current) => (current === key.id ? null : current));
+      }, 1800);
+    } catch {
+      setMessage("Não foi possível copiar a key automaticamente.");
+    }
   }
 
   async function removeSpin(id: string) {
@@ -392,6 +422,7 @@ export function AdminDashboard() {
       wheelNumber: String(item.wheelNumber),
       active: item.active
     });
+    itemFormRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
   function editKey(key: AccessKey) {
@@ -404,6 +435,19 @@ export function AdminDashboard() {
       active: key.active,
       expiresAt: key.expiresAt ? key.expiresAt.slice(0, 16) : ""
     });
+    keyFormRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  function addItemToWheel(wheelNumber: number) {
+    setEditingItemId(null);
+    setItemForm({ ...emptyItem, wheelNumber: String(wheelNumber) });
+    itemFormRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  function addKeyToWheel(wheelNumber: number) {
+    setEditingKeyId(null);
+    setKeyForm({ ...emptyKey, wheelNumber: String(wheelNumber) });
+    keyFormRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
   return (
@@ -460,10 +504,25 @@ export function AdminDashboard() {
           </div>
         </section>
 
-        <section className="grid min-w-0 gap-5 lg:grid-cols-2 lg:gap-6">
+        <section className="space-y-6">
           <div className="admin-card">
-            <h2 className="text-xl font-black">Itens da roleta</h2>
-            <form onSubmit={submitItem} className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-black">Produtos das roletas</h2>
+                <p className="mt-1 text-sm text-slate-400">
+                  Cadastre o produto e escolha em qual roleta ele aparecerá.
+                </p>
+              </div>
+              <div className="rounded-lg border border-volt/20 bg-volt/10 px-3 py-2 text-sm font-bold text-emerald-100">
+                Cadastrando na Roleta {itemForm.wheelNumber}
+              </div>
+            </div>
+
+            <form
+              ref={itemFormRef}
+              onSubmit={submitItem}
+              className="mt-4 grid gap-3 sm:grid-cols-2"
+            >
               <input
                 className="field"
                 placeholder="Nome do item"
@@ -586,65 +645,109 @@ export function AdminDashboard() {
               </button>
             </form>
 
-            <div className="mt-5 max-h-[430px] overflow-auto">
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th>Roleta</th>
-                    <th>Chance</th>
-                    <th>Status</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((item) => (
-                    <tr key={item.id}>
-                      <td>
-                        <div className="flex items-center gap-3">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={item.imageUrl}
-                            alt=""
-                            className="h-11 w-11 shrink-0 rounded-lg border border-white/10 bg-black/30 object-contain p-1"
-                          />
-                          <div>
-                            <div className="font-bold">{item.name}</div>
-                            <div className="text-xs text-slate-400">{item.rarity}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td>Roleta {item.wheelNumber}</td>
-                      <td>{item.probability}</td>
-                      <td>{item.active ? "Ativo" : "Inativo"}</td>
-                      <td>
-                        <div className="admin-actions">
-                          <button
-                            disabled={Boolean(actionLoading)}
-                            onClick={() => editItem(item)}
-                            className="ghost-button"
+            <div className="mt-6 grid gap-4 xl:grid-cols-2">
+              {wheelNumbers.map((wheelNumber) => {
+                const wheelItems = items.filter(
+                  (item) => item.wheelNumber === wheelNumber
+                );
+
+                return (
+                  <section
+                    key={wheelNumber}
+                    className="rounded-xl border border-white/10 bg-black/20 p-3 sm:p-4"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <h3 className="text-lg font-black text-white">
+                          Roleta {wheelNumber}
+                        </h3>
+                        <p className="text-xs text-slate-400">
+                          {wheelItems.length} produto{wheelItems.length === 1 ? "" : "s"}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => addItemToWheel(wheelNumber)}
+                        className="ghost-button"
+                      >
+                        Adicionar produto
+                      </button>
+                    </div>
+
+                    <div className="admin-wheel-list mt-4">
+                      {wheelItems.length ? (
+                        wheelItems.map((item) => (
+                          <article
+                            key={item.id}
+                            className="rounded-lg border border-white/10 bg-white/[0.035] p-3"
                           >
-                            Editar
-                          </button>
-                          <button
-                            disabled={actionLoading === `item-${item.id}`}
-                            onClick={() => removeItem(item.id)}
-                            className="ghost-button"
-                          >
-                            {actionLoading === `item-${item.id}` ? "Removendo..." : "Remover"}
-                          </button>
+                            <div className="flex min-w-0 items-center gap-3">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={item.imageUrl}
+                                alt=""
+                                className="h-14 w-14 shrink-0 rounded-lg border border-white/10 bg-black/30 object-contain p-1"
+                              />
+                              <div className="min-w-0 flex-1">
+                                <div className="truncate font-bold">{item.name}</div>
+                                <div className="mt-1 text-xs text-slate-400">
+                                  {item.rarity} • Chance {item.probability} •{" "}
+                                  {item.active ? "Ativo" : "Inativo"}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="admin-actions mt-3">
+                              <button
+                                type="button"
+                                disabled={Boolean(actionLoading)}
+                                onClick={() => editItem(item)}
+                                className="ghost-button"
+                              >
+                                Editar
+                              </button>
+                              <button
+                                type="button"
+                                disabled={actionLoading === `item-${item.id}`}
+                                onClick={() => void removeItem(item.id)}
+                                className="ghost-button"
+                              >
+                                {actionLoading === `item-${item.id}`
+                                  ? "Removendo..."
+                                  : "Remover"}
+                              </button>
+                            </div>
+                          </article>
+                        ))
+                      ) : (
+                        <div className="rounded-lg border border-dashed border-white/10 px-4 py-8 text-center text-sm text-slate-500">
+                          Nenhum produto cadastrado nesta roleta.
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      )}
+                    </div>
+                  </section>
+                );
+              })}
             </div>
           </div>
 
           <div className="admin-card">
-            <h2 className="text-xl font-black">Keys de acesso</h2>
-            <form onSubmit={submitKey} className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-black">Keys de acesso</h2>
+                <p className="mt-1 text-sm text-slate-400">
+                  Cada key libera somente a roleta selecionada.
+                </p>
+              </div>
+              <div className="rounded-lg border border-volt/20 bg-volt/10 px-3 py-2 text-sm font-bold text-emerald-100">
+                Criando para a Roleta {keyForm.wheelNumber}
+              </div>
+            </div>
+
+            <form
+              ref={keyFormRef}
+              onSubmit={submitKey}
+              className="mt-4 grid gap-3 sm:grid-cols-2"
+            >
               <div className="flex flex-col gap-2 sm:col-span-2 sm:flex-row">
                 <input
                   className="field uppercase"
@@ -711,53 +814,102 @@ export function AdminDashboard() {
               </button>
             </form>
 
-            <div className="mt-5 max-h-[430px] overflow-auto">
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Key</th>
-                    <th>Uso</th>
-                    <th>Roleta</th>
-                    <th>Expira</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {keys.map((key) => (
-                    <tr key={key.id}>
-                      <td>
-                        <div className="font-mono font-bold">{key.code}</div>
-                        <div className="text-xs text-slate-400">
-                          {key.usedAt
-                            ? `Usada em ${formatDate(key.usedAt)}`
-                            : "Ainda não utilizada"}
-                        </div>
-                      </td>
-                      <td>{key.singleUse ? "Único" : "Reutilizável"}</td>
-                      <td>Roleta {key.wheelNumber}</td>
-                      <td>{formatDate(key.expiresAt)}</td>
-                      <td>
-                        <div className="admin-actions">
-                          <button
-                            disabled={Boolean(actionLoading)}
-                            onClick={() => editKey(key)}
-                            className="ghost-button"
+            <div className="mt-6 grid gap-4 xl:grid-cols-2">
+              {wheelNumbers.map((wheelNumber) => {
+                const wheelKeys = keys.filter(
+                  (key) => key.wheelNumber === wheelNumber
+                );
+
+                return (
+                  <section
+                    key={wheelNumber}
+                    className="rounded-xl border border-white/10 bg-black/20 p-3 sm:p-4"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <h3 className="text-lg font-black text-white">
+                          Roleta {wheelNumber}
+                        </h3>
+                        <p className="text-xs text-slate-400">
+                          {wheelKeys.length} key{wheelKeys.length === 1 ? "" : "s"}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => addKeyToWheel(wheelNumber)}
+                        className="ghost-button"
+                      >
+                        Criar key
+                      </button>
+                    </div>
+
+                    <div className="admin-wheel-list mt-4">
+                      {wheelKeys.length ? (
+                        wheelKeys.map((key) => (
+                          <article
+                            key={key.id}
+                            className="rounded-lg border border-white/10 bg-white/[0.035] p-3"
                           >
-                            Editar
-                          </button>
-                          <button
-                            disabled={actionLoading === `key-${key.id}`}
-                            onClick={() => removeKey(key.id)}
-                            className="ghost-button"
-                          >
-                            {actionLoading === `key-${key.id}` ? "Removendo..." : "Remover"}
-                          </button>
+                            <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                              <div className="min-w-0">
+                                <div className="break-all font-mono font-bold text-white">
+                                  {key.code}
+                                </div>
+                                <div className="mt-1 text-xs text-slate-400">
+                                  {key.singleUse ? "Uso único" : "Reutilizável"} •{" "}
+                                  {key.active ? "Ativa" : "Inativa"}
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => void copyKey(key)}
+                                className="ghost-button"
+                              >
+                                {copiedKeyId === key.id ? "Copiada!" : "Copiar"}
+                              </button>
+                            </div>
+
+                            <div className="mt-2 text-xs leading-5 text-slate-400">
+                              <div>
+                                {key.usedAt
+                                  ? `Usada em ${formatDate(key.usedAt)}`
+                                  : "Ainda não utilizada"}
+                              </div>
+                              <div>Expira: {formatDate(key.expiresAt)}</div>
+                              {key.label ? <div>Rótulo: {key.label}</div> : null}
+                            </div>
+
+                            <div className="admin-actions mt-3">
+                              <button
+                                type="button"
+                                disabled={Boolean(actionLoading)}
+                                onClick={() => editKey(key)}
+                                className="ghost-button"
+                              >
+                                Editar
+                              </button>
+                              <button
+                                type="button"
+                                disabled={actionLoading === `key-${key.id}`}
+                                onClick={() => void removeKey(key.id)}
+                                className="ghost-button"
+                              >
+                                {actionLoading === `key-${key.id}`
+                                  ? "Removendo..."
+                                  : "Remover"}
+                              </button>
+                            </div>
+                          </article>
+                        ))
+                      ) : (
+                        <div className="rounded-lg border border-dashed border-white/10 px-4 py-8 text-center text-sm text-slate-500">
+                          Nenhuma key cadastrada para esta roleta.
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      )}
+                    </div>
+                  </section>
+                );
+              })}
             </div>
           </div>
         </section>

@@ -377,6 +377,14 @@ img {
   white-space: nowrap;
 }
 
+.admin-wheel-list {
+  display: grid;
+  max-height: 420px;
+  gap: 0.75rem;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
 .ghost-button {
   display: inline-flex;
   align-items: center;
