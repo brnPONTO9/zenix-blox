@@ -93,6 +93,8 @@ export function AdminDashboard() {
   const [keyForm, setKeyForm] = useState(emptyKey);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingKeyId, setEditingKeyId] = useState<string | null>(null);
+  const [openItemWheel, setOpenItemWheel] = useState<number | null>(null);
+  const [openKeyWheel, setOpenKeyWheel] = useState<number | null>(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -216,6 +218,7 @@ export function AdminDashboard() {
     );
     setItemForm({ ...emptyItem, wheelNumber: itemForm.wheelNumber });
     setEditingItemId(null);
+    setOpenItemWheel(null);
     setMessage("Item salvo com sucesso.");
     setActionLoading(null);
   }
@@ -303,6 +306,7 @@ export function AdminDashboard() {
     );
     setKeyForm({ ...emptyKey, wheelNumber: keyForm.wheelNumber });
     setEditingKeyId(null);
+    setOpenKeyWheel(null);
     setMessage("Key salva com sucesso.");
     setActionLoading(null);
   }
@@ -323,6 +327,7 @@ export function AdminDashboard() {
     if (editingItemId === id) {
       setEditingItemId(null);
       setItemForm(emptyItem);
+      setOpenItemWheel(null);
     }
     setMessage("Item removido com sucesso.");
     setActionLoading(null);
@@ -344,6 +349,7 @@ export function AdminDashboard() {
     if (editingKeyId === id) {
       setEditingKeyId(null);
       setKeyForm(emptyKey);
+      setOpenKeyWheel(null);
     }
     setMessage("Key removida com sucesso.");
     setActionLoading(null);
@@ -414,6 +420,7 @@ export function AdminDashboard() {
 
   function editItem(item: Item) {
     setEditingItemId(item.id);
+    setOpenItemWheel(item.wheelNumber);
     setItemForm({
       name: item.name,
       imageUrl: item.imageUrl,
@@ -422,11 +429,14 @@ export function AdminDashboard() {
       wheelNumber: String(item.wheelNumber),
       active: item.active
     });
-    itemFormRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    window.requestAnimationFrame(() => {
+      itemFormRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
   }
 
   function editKey(key: AccessKey) {
     setEditingKeyId(key.id);
+    setOpenKeyWheel(key.wheelNumber);
     setKeyForm({
       code: key.code,
       label: key.label ?? "",
@@ -435,19 +445,274 @@ export function AdminDashboard() {
       active: key.active,
       expiresAt: key.expiresAt ? key.expiresAt.slice(0, 16) : ""
     });
-    keyFormRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    window.requestAnimationFrame(() => {
+      keyFormRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
   }
 
   function addItemToWheel(wheelNumber: number) {
+    if (openItemWheel === wheelNumber && !editingItemId) {
+      setOpenItemWheel(null);
+      return;
+    }
+
     setEditingItemId(null);
+    setOpenItemWheel(wheelNumber);
     setItemForm({ ...emptyItem, wheelNumber: String(wheelNumber) });
-    itemFormRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    window.requestAnimationFrame(() => {
+      itemFormRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
   }
 
   function addKeyToWheel(wheelNumber: number) {
+    if (openKeyWheel === wheelNumber && !editingKeyId) {
+      setOpenKeyWheel(null);
+      return;
+    }
+
     setEditingKeyId(null);
+    setOpenKeyWheel(wheelNumber);
     setKeyForm({ ...emptyKey, wheelNumber: String(wheelNumber) });
-    keyFormRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    window.requestAnimationFrame(() => {
+      keyFormRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }
+
+  function closeItemForm() {
+    setEditingItemId(null);
+    setOpenItemWheel(null);
+    setItemForm(emptyItem);
+  }
+
+  function closeKeyForm() {
+    setEditingKeyId(null);
+    setOpenKeyWheel(null);
+    setKeyForm(emptyKey);
+  }
+
+  function renderItemForm(wheelNumber: number) {
+    return (
+      <form
+        ref={itemFormRef}
+        onSubmit={submitItem}
+        className="mt-4 grid gap-3 rounded-xl border border-volt/25 bg-volt/5 p-3 sm:grid-cols-2 sm:p-4"
+      >
+        <div className="sm:col-span-2">
+          <p className="font-black text-white">
+            {editingItemId ? "Editar produto" : "Adicionar produto"} na Roleta{" "}
+            {wheelNumber}
+          </p>
+          <p className="mt-1 text-xs text-slate-400">
+            Este produto será exibido somente nesta roleta.
+          </p>
+        </div>
+
+        <input
+          className="field"
+          placeholder="Nome do item"
+          value={itemForm.name}
+          onChange={(event) => setItemForm({ ...itemForm, name: event.target.value })}
+        />
+        <input
+          className="field"
+          placeholder="Raridade"
+          value={itemForm.rarity}
+          onChange={(event) => setItemForm({ ...itemForm, rarity: event.target.value })}
+        />
+
+        <div className="sm:col-span-2">
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            className="sr-only"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) {
+                void uploadItemImage(file);
+              }
+            }}
+          />
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => imageInputRef.current?.click()}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                imageInputRef.current?.click();
+              }
+            }}
+            onDragEnter={(event) => {
+              event.preventDefault();
+              setIsDraggingImage(true);
+            }}
+            onDragOver={(event) => event.preventDefault()}
+            onDragLeave={() => setIsDraggingImage(false)}
+            onDrop={handleImageDrop}
+            className={`group flex min-h-40 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-4 text-center transition ${
+              isDraggingImage
+                ? "border-volt bg-volt/10"
+                : "border-white/15 bg-black/20 hover:border-volt/50 hover:bg-volt/5"
+            }`}
+          >
+            {imageUploading ? (
+              <>
+                <div className="text-base font-black text-volt">Enviando imagem...</div>
+                <div className="mt-1 text-xs text-slate-400">Aguarde alguns segundos</div>
+              </>
+            ) : itemForm.imageUrl ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={itemForm.imageUrl}
+                  alt="Prévia do produto"
+                  className="mb-3 h-24 w-24 rounded-lg border border-white/10 bg-black/30 object-contain p-2"
+                />
+                <div className="font-black text-white">Clique ou arraste para trocar</div>
+                <div className="mt-1 text-xs text-slate-400">PNG, JPG, WebP ou GIF</div>
+              </>
+            ) : (
+              <>
+                <div className="grid h-12 w-12 place-items-center rounded-full border border-volt/30 bg-volt/10 text-2xl font-black text-volt">
+                  +
+                </div>
+                <div className="mt-3 font-black text-white">Escolher imagem do produto</div>
+                <div className="mt-1 text-xs leading-5 text-slate-400">
+                  Clique para procurar ou arraste a imagem até aqui
+                  <br />
+                  PNG, JPG, WebP ou GIF, máximo 4 MB
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        <input
+          className="field"
+          type="number"
+          min="0.0001"
+          step="0.0001"
+          placeholder="Chance/peso"
+          value={itemForm.probability}
+          onChange={(event) =>
+            setItemForm({ ...itemForm, probability: event.target.value })
+          }
+        />
+        <label className="flex min-h-12 items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-3 text-sm font-bold">
+          <input
+            type="checkbox"
+            checked={itemForm.active}
+            onChange={(event) =>
+              setItemForm({ ...itemForm, active: event.target.checked })
+            }
+          />
+          Ativo
+        </label>
+
+        <div className="grid gap-2 sm:col-span-2 sm:grid-cols-2">
+          <button
+            disabled={actionLoading === "item-form" || imageUploading}
+            className="primary-button"
+          >
+            {actionLoading === "item-form"
+              ? "Salvando..."
+              : editingItemId
+                ? "Atualizar produto"
+                : "Salvar produto"}
+          </button>
+          <button type="button" onClick={closeItemForm} className="ghost-button">
+            Cancelar
+          </button>
+        </div>
+      </form>
+    );
+  }
+
+  function renderKeyForm(wheelNumber: number) {
+    return (
+      <form
+        ref={keyFormRef}
+        onSubmit={submitKey}
+        className="mt-4 grid gap-3 rounded-xl border border-volt/25 bg-volt/5 p-3 sm:grid-cols-2 sm:p-4"
+      >
+        <div className="sm:col-span-2">
+          <p className="font-black text-white">
+            {editingKeyId ? "Editar key" : "Criar key"} da Roleta {wheelNumber}
+          </p>
+          <p className="mt-1 text-xs text-slate-400">
+            Esta key dará acesso somente à Roleta {wheelNumber}.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-2 sm:col-span-2 sm:flex-row">
+          <input
+            className="field uppercase"
+            placeholder="Código"
+            value={keyForm.code}
+            onChange={(event) => setKeyForm({ ...keyForm, code: event.target.value })}
+          />
+          <button
+            type="button"
+            onClick={() => setKeyForm({ ...keyForm, code: generateCode() })}
+            className="ghost-button sm:w-auto"
+          >
+            Gerar
+          </button>
+        </div>
+
+        <input
+          className="field"
+          placeholder="Rótulo opcional"
+          value={keyForm.label}
+          onChange={(event) => setKeyForm({ ...keyForm, label: event.target.value })}
+        />
+        <input
+          className="field"
+          type="datetime-local"
+          value={keyForm.expiresAt}
+          onChange={(event) =>
+            setKeyForm({ ...keyForm, expiresAt: event.target.value })
+          }
+        />
+        <label className="flex min-h-12 items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-3 text-sm font-bold">
+          <input
+            type="checkbox"
+            checked={keyForm.singleUse}
+            onChange={(event) =>
+              setKeyForm({ ...keyForm, singleUse: event.target.checked })
+            }
+          />
+          Uso único
+        </label>
+        <label className="flex min-h-12 items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-3 text-sm font-bold">
+          <input
+            type="checkbox"
+            checked={keyForm.active}
+            onChange={(event) =>
+              setKeyForm({ ...keyForm, active: event.target.checked })
+            }
+          />
+          Ativa
+        </label>
+
+        <div className="grid gap-2 sm:col-span-2 sm:grid-cols-2">
+          <button
+            disabled={actionLoading === "key-form"}
+            className="primary-button"
+          >
+            {actionLoading === "key-form"
+              ? "Salvando..."
+              : editingKeyId
+                ? "Atualizar key"
+                : "Salvar key"}
+          </button>
+          <button type="button" onClick={closeKeyForm} className="ghost-button">
+            Cancelar
+          </button>
+        </div>
+      </form>
+    );
   }
 
   return (
@@ -510,140 +775,10 @@ export function AdminDashboard() {
               <div>
                 <h2 className="text-xl font-black">Produtos das roletas</h2>
                 <p className="mt-1 text-sm text-slate-400">
-                  Cadastre o produto e escolha em qual roleta ele aparecerá.
+                  Use o botão de cada roleta para abrir o cadastro no lugar certo.
                 </p>
               </div>
-              <div className="rounded-lg border border-volt/20 bg-volt/10 px-3 py-2 text-sm font-bold text-emerald-100">
-                Cadastrando na Roleta {itemForm.wheelNumber}
-              </div>
             </div>
-
-            <form
-              ref={itemFormRef}
-              onSubmit={submitItem}
-              className="mt-4 grid gap-3 sm:grid-cols-2"
-            >
-              <input
-                className="field"
-                placeholder="Nome do item"
-                value={itemForm.name}
-                onChange={(event) => setItemForm({ ...itemForm, name: event.target.value })}
-              />
-              <input
-                className="field"
-                placeholder="Raridade"
-                value={itemForm.rarity}
-                onChange={(event) => setItemForm({ ...itemForm, rarity: event.target.value })}
-              />
-              <div className="sm:col-span-2">
-                <input
-                  ref={imageInputRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp,image/gif"
-                  className="sr-only"
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    if (file) {
-                      void uploadItemImage(file);
-                    }
-                  }}
-                />
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => imageInputRef.current?.click()}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      imageInputRef.current?.click();
-                    }
-                  }}
-                  onDragEnter={(event) => {
-                    event.preventDefault();
-                    setIsDraggingImage(true);
-                  }}
-                  onDragOver={(event) => event.preventDefault()}
-                  onDragLeave={() => setIsDraggingImage(false)}
-                  onDrop={handleImageDrop}
-                  className={`group flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-4 text-center transition ${
-                    isDraggingImage
-                      ? "border-volt bg-volt/10"
-                      : "border-white/15 bg-black/20 hover:border-volt/50 hover:bg-volt/5"
-                  }`}
-                >
-                  {imageUploading ? (
-                    <>
-                      <div className="text-base font-black text-volt">Enviando imagem...</div>
-                      <div className="mt-1 text-xs text-slate-400">Aguarde alguns segundos</div>
-                    </>
-                  ) : itemForm.imageUrl ? (
-                    <>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={itemForm.imageUrl}
-                        alt="Prévia do produto"
-                        className="mb-3 h-24 w-24 rounded-lg border border-white/10 bg-black/30 object-contain p-2"
-                      />
-                      <div className="font-black text-white">Clique ou arraste para trocar</div>
-                      <div className="mt-1 text-xs text-slate-400">PNG, JPG, WebP ou GIF</div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="grid h-12 w-12 place-items-center rounded-full border border-volt/30 bg-volt/10 text-2xl font-black text-volt">
-                        +
-                      </div>
-                      <div className="mt-3 font-black text-white">Escolher imagem do produto</div>
-                      <div className="mt-1 text-xs leading-5 text-slate-400">
-                        Clique para procurar ou arraste a imagem até aqui
-                        <br />
-                        PNG, JPG, WebP ou GIF, máximo 4 MB
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-              <input
-                className="field"
-                type="number"
-                min="0.0001"
-                step="0.0001"
-                placeholder="Chance/peso"
-                value={itemForm.probability}
-                onChange={(event) =>
-                  setItemForm({ ...itemForm, probability: event.target.value })
-                }
-              />
-              <select
-                className="field"
-                value={itemForm.wheelNumber}
-                onChange={(event) =>
-                  setItemForm({ ...itemForm, wheelNumber: event.target.value })
-                }
-              >
-                <option value="1">Roleta 1</option>
-                <option value="2">Roleta 2</option>
-                <option value="3">Roleta 3</option>
-                <option value="4">Roleta 4</option>
-              </select>
-              <label className="flex min-h-12 items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-3 text-sm font-bold">
-                <input
-                  type="checkbox"
-                  checked={itemForm.active}
-                  onChange={(event) => setItemForm({ ...itemForm, active: event.target.checked })}
-                />
-                Ativo
-              </label>
-              <button
-                disabled={actionLoading === "item-form" || imageUploading}
-                className="primary-button sm:col-span-2"
-              >
-                {actionLoading === "item-form"
-                  ? "Salvando..."
-                  : editingItemId
-                    ? "Atualizar item"
-                    : "Adicionar item"}
-              </button>
-            </form>
 
             <div className="mt-6 grid gap-4 xl:grid-cols-2">
               {wheelNumbers.map((wheelNumber) => {
@@ -670,9 +805,15 @@ export function AdminDashboard() {
                         onClick={() => addItemToWheel(wheelNumber)}
                         className="ghost-button"
                       >
-                        Adicionar produto
+                        {openItemWheel === wheelNumber && !editingItemId
+                          ? "Fechar cadastro"
+                          : "Adicionar produto"}
                       </button>
                     </div>
+
+                    {openItemWheel === wheelNumber
+                      ? renderItemForm(wheelNumber)
+                      : null}
 
                     <div className="admin-wheel-list mt-4">
                       {wheelItems.length ? (
@@ -735,84 +876,10 @@ export function AdminDashboard() {
               <div>
                 <h2 className="text-xl font-black">Keys de acesso</h2>
                 <p className="mt-1 text-sm text-slate-400">
-                  Cada key libera somente a roleta selecionada.
+                  Use o botão de cada roleta para criar a key diretamente nela.
                 </p>
               </div>
-              <div className="rounded-lg border border-volt/20 bg-volt/10 px-3 py-2 text-sm font-bold text-emerald-100">
-                Criando para a Roleta {keyForm.wheelNumber}
-              </div>
             </div>
-
-            <form
-              ref={keyFormRef}
-              onSubmit={submitKey}
-              className="mt-4 grid gap-3 sm:grid-cols-2"
-            >
-              <div className="flex flex-col gap-2 sm:col-span-2 sm:flex-row">
-                <input
-                  className="field uppercase"
-                  placeholder="Código"
-                  value={keyForm.code}
-                  onChange={(event) => setKeyForm({ ...keyForm, code: event.target.value })}
-                />
-                <button
-                  type="button"
-                  onClick={() => setKeyForm({ ...keyForm, code: generateCode() })}
-                  className="ghost-button sm:w-auto"
-                >
-                  Gerar
-                </button>
-              </div>
-              <input
-                className="field"
-                placeholder="Rótulo opcional"
-                value={keyForm.label}
-                onChange={(event) => setKeyForm({ ...keyForm, label: event.target.value })}
-              />
-              <select
-                className="field"
-                value={keyForm.wheelNumber}
-                onChange={(event) =>
-                  setKeyForm({ ...keyForm, wheelNumber: event.target.value })
-                }
-              >
-                <option value="1">Liberar Roleta 1</option>
-                <option value="2">Liberar Roleta 2</option>
-                <option value="3">Liberar Roleta 3</option>
-                <option value="4">Liberar Roleta 4</option>
-              </select>
-              <input
-                className="field"
-                type="datetime-local"
-                value={keyForm.expiresAt}
-                onChange={(event) => setKeyForm({ ...keyForm, expiresAt: event.target.value })}
-              />
-              <label className="flex min-h-12 items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-3 text-sm font-bold">
-                <input
-                  type="checkbox"
-                  checked={keyForm.singleUse}
-                  onChange={(event) =>
-                    setKeyForm({ ...keyForm, singleUse: event.target.checked })
-                  }
-                />
-                Uso único
-              </label>
-              <label className="flex min-h-12 items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-3 text-sm font-bold">
-                <input
-                  type="checkbox"
-                  checked={keyForm.active}
-                  onChange={(event) => setKeyForm({ ...keyForm, active: event.target.checked })}
-                />
-                Ativa
-              </label>
-              <button disabled={actionLoading === "key-form"} className="primary-button sm:col-span-2">
-                {actionLoading === "key-form"
-                  ? "Salvando..."
-                  : editingKeyId
-                    ? "Atualizar key"
-                    : "Criar key"}
-              </button>
-            </form>
 
             <div className="mt-6 grid gap-4 xl:grid-cols-2">
               {wheelNumbers.map((wheelNumber) => {
@@ -839,9 +906,13 @@ export function AdminDashboard() {
                         onClick={() => addKeyToWheel(wheelNumber)}
                         className="ghost-button"
                       >
-                        Criar key
+                        {openKeyWheel === wheelNumber && !editingKeyId
+                          ? "Fechar cadastro"
+                          : "Criar key"}
                       </button>
                     </div>
+
+                    {openKeyWheel === wheelNumber ? renderKeyForm(wheelNumber) : null}
 
                     <div className="admin-wheel-list mt-4">
                       {wheelKeys.length ? (
