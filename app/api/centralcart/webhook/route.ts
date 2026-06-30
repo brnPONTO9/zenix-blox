@@ -8,8 +8,34 @@ export const runtime = "nodejs";
 type CentralCartPackage = {
   id?: string | number;
   package_id?: string | number;
+  product_id?: string | number;
   name?: string;
   title?: string;
+  slug?: string;
+  meta?: {
+    id?: string | number;
+    package_id?: string | number;
+    product_id?: string | number;
+    name?: string;
+    title?: string;
+    slug?: string;
+  };
+  product?: {
+    id?: string | number;
+    package_id?: string | number;
+    product_id?: string | number;
+    name?: string;
+    title?: string;
+    slug?: string;
+  };
+  package?: {
+    id?: string | number;
+    package_id?: string | number;
+    product_id?: string | number;
+    name?: string;
+    title?: string;
+    slug?: string;
+  };
 };
 
 type CentralCartOrderPayload = {
@@ -131,13 +157,43 @@ function getMappedPackage(payload: CentralCartOrderPayload) {
   ];
 
   for (const item of packages) {
-    const packageId = String(item.package_id ?? item.id ?? "").trim();
-    const wheelNumber = packageWheelMap.get(packageId);
+    const identifiers = [
+      item.package_id,
+      item.product_id,
+      item.id,
+      item.meta?.package_id,
+      item.meta?.product_id,
+      item.meta?.id,
+      item.product?.package_id,
+      item.product?.product_id,
+      item.product?.id,
+      item.package?.package_id,
+      item.package?.product_id,
+      item.package?.id,
+      item.slug,
+      item.meta?.slug,
+      item.product?.slug,
+      item.package?.slug
+    ]
+      .map((value) => String(value ?? "").trim())
+      .filter(Boolean);
+
+    const packageId = identifiers.find((identifier) => packageWheelMap.has(identifier));
+    const wheelNumber = packageId ? packageWheelMap.get(packageId) : null;
 
     if (packageId && wheelNumber) {
       return {
         packageId,
-        packageName: item.name ?? item.title ?? null,
+        packageName:
+          item.name ??
+          item.title ??
+          item.meta?.name ??
+          item.meta?.title ??
+          item.product?.name ??
+          item.product?.title ??
+          item.package?.name ??
+          item.package?.title ??
+          null,
         wheelNumber
       };
     }

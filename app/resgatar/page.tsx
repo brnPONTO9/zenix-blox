@@ -16,7 +16,11 @@ export default async function RedeemPage({ searchParams }: RedeemPageProps) {
   const params = await searchParams;
   const orderId = String(params?.pedido ?? params?.order ?? "").trim();
   const email = String(params?.email ?? "").trim().toLowerCase();
-  const packageId = String(params?.pacote ?? params?.package ?? "").trim();
+  const rawPackageId = String(params?.pacote ?? params?.package ?? "").trim();
+  const packageId =
+    rawPackageId && rawPackageId !== "undefined" && rawPackageId !== "null"
+      ? rawPackageId
+      : "";
 
   if (!orderId) {
     return (
