@@ -36,8 +36,27 @@ model AccessKey {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   spins       SpinHistory[]
+  centralCartOrder CentralCartOrder?
 
   @@index([wheelNumber, active, deletedAt])
+}
+
+model CentralCartOrder {
+  id          String    @id @default(cuid())
+  orderId     String    @unique
+  eventId     String?   @unique
+  packageId   String
+  packageName String?
+  buyerEmail  String?
+  wheelNumber Int
+  accessKeyId String?   @unique
+  accessKey   AccessKey? @relation(fields: [accessKeyId], references: [id])
+  payload     Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([wheelNumber])
+  @@index([packageId])
 }
 
 model WheelItem {

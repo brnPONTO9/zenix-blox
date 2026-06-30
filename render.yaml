@@ -17,3 +17,9 @@ services:
         sync: false
       - key: SEED_ADMIN_PASSWORD
         sync: false
+      - key: SEED_DEMO_DATA
+        value: "false"
+      - key: CENTRALCART_WEBHOOK_SECRET
+        sync: false
+      - key: CENTRALCART_PACKAGE_ROULETTE_MAP
+        sync: false
