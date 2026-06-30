@@ -44,10 +44,23 @@ type CentralCartOrderPayload = {
   status?: string;
   event?: string;
   email?: string;
+  client_email?: string;
+  customer_email?: string;
+  buyer_email?: string;
+  payer_email?: string;
   customer?: {
     email?: string;
   };
   client?: {
+    email?: string;
+  };
+  buyer?: {
+    email?: string;
+  };
+  payer?: {
+    email?: string;
+  };
+  user?: {
     email?: string;
   };
   packages?: CentralCartPackage[];
@@ -145,7 +158,19 @@ function getOrderId(payload: CentralCartOrderPayload) {
 }
 
 function getBuyerEmail(payload: CentralCartOrderPayload) {
-  return payload.customer?.email ?? payload.client?.email ?? payload.email ?? null;
+  return (
+    payload.customer?.email ??
+    payload.client?.email ??
+    payload.buyer?.email ??
+    payload.payer?.email ??
+    payload.user?.email ??
+    payload.client_email ??
+    payload.customer_email ??
+    payload.buyer_email ??
+    payload.payer_email ??
+    payload.email ??
+    null
+  );
 }
 
 function getMappedPackage(payload: CentralCartOrderPayload) {
