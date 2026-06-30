@@ -7,6 +7,8 @@ type RedeemPageProps = {
     pedido?: string;
     order?: string;
     email?: string;
+    pacote?: string;
+    package?: string;
   }>;
 };
 
@@ -14,6 +16,7 @@ export default async function RedeemPage({ searchParams }: RedeemPageProps) {
   const params = await searchParams;
   const orderId = String(params?.pedido ?? params?.order ?? "").trim();
   const email = String(params?.email ?? "").trim().toLowerCase();
+  const packageId = String(params?.pacote ?? params?.package ?? "").trim();
 
   if (!orderId) {
     return (
@@ -31,15 +34,35 @@ export default async function RedeemPage({ searchParams }: RedeemPageProps) {
     );
   }
 
-  const centralCartOrder = await prisma.centralCartOrder.findUnique({
+  const exactOrder = await prisma.centralCartOrder.findUnique({
     where: { orderId },
     include: { accessKey: true }
   });
 
+  const centralCartOrder =
+    exactOrder && (!email || exactOrder.buyerEmail?.toLowerCase() === email)
+      ? exactOrder
+      : email
+        ? await prisma.centralCartOrder.findFirst({
+            where: {
+              buyerEmail: { equals: email, mode: "insensitive" },
+              ...(packageId ? { packageId } : {}),
+              accessKey: {
+                is: {
+                  active: true,
+                  deletedAt: null,
+                  usedAt: null
+                }
+              }
+            },
+            include: { accessKey: true },
+            orderBy: { createdAt: "desc" }
+          })
+        : null;
+
   if (
     !centralCartOrder ||
-    !centralCartOrder.accessKey ||
-    (email && centralCartOrder.buyerEmail?.toLowerCase() !== email)
+    !centralCartOrder.accessKey
   ) {
     return (
       <main className="grid min-h-screen place-items-center bg-obsidian px-4 py-8 text-white">
