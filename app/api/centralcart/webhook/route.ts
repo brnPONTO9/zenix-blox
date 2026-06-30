@@ -25,8 +25,18 @@ type CentralCartOrderPayload = {
     email?: string;
   };
   packages?: CentralCartPackage[];
+  items?: CentralCartPackage[];
+  package?: CentralCartPackage;
 };
 
+type CentralCartWebhookPayload = {
+  id?: string | number;
+  event?: string;
+  date?: string;
+  data?: CentralCartOrderPayload;
+};
+
+const approvedEvents = new Set(["order_approved", "pedido_aprovado"]);
 const approvedStatuses = new Set(["approved", "paid", "order_approved", "pedido_aprovado"]);
 
 function getWebhookSecret() {
@@ -55,6 +65,10 @@ function parsePackageWheelMap() {
   return map;
 }
 
+function normalizeSignature(signature: string) {
+  return signature.replace(/^sha256=/i, "").trim();
+}
+
 function verifyCentralCartSignature(rawBody: string, request: NextRequest) {
   const signature = request.headers.get("x-centralcart-signature");
   const timestamp = request.headers.get("x-centralcart-timestamp");
@@ -68,19 +82,36 @@ function verifyCentralCartSignature(rawBody: string, request: NextRequest) {
     return false;
   }
 
-  const signedPayload = `${timestamp}.${rawBody}`;
-  const expected = createHmac("sha256", getWebhookSecret())
-    .update(signedPayload)
-    .digest("hex");
+  const payloadCandidates = [rawBody];
+  try {
+    payloadCandidates.push(JSON.stringify(JSON.parse(rawBody)));
+  } catch {
+    // Keep only the raw body candidate for invalid JSON.
+  }
 
-  const receivedBuffer = Buffer.from(signature, "hex");
-  const expectedBuffer = Buffer.from(expected, "hex");
+  const receivedSignature = normalizeSignature(signature);
+  const receivedBuffer = Buffer.from(receivedSignature, "hex");
 
-  if (receivedBuffer.length !== expectedBuffer.length) {
+  if (!receivedBuffer.length) {
     return false;
   }
 
-  return timingSafeEqual(receivedBuffer, expectedBuffer);
+  for (const payloadCandidate of payloadCandidates) {
+    const signedPayload = `${timestamp}.${payloadCandidate}`;
+    const expected = createHmac("sha256", getWebhookSecret())
+      .update(signedPayload)
+      .digest("hex");
+    const expectedBuffer = Buffer.from(expected, "hex");
+
+    if (
+      receivedBuffer.length === expectedBuffer.length &&
+      timingSafeEqual(receivedBuffer, expectedBuffer)
+    ) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function getOrderId(payload: CentralCartOrderPayload) {
@@ -93,8 +124,13 @@ function getBuyerEmail(payload: CentralCartOrderPayload) {
 
 function getMappedPackage(payload: CentralCartOrderPayload) {
   const packageWheelMap = parsePackageWheelMap();
+  const packages = [
+    ...(payload.packages ?? []),
+    ...(payload.items ?? []),
+    ...(payload.package ? [payload.package] : [])
+  ];
 
-  for (const item of payload.packages ?? []) {
+  for (const item of packages) {
     const packageId = String(item.package_id ?? item.id ?? "").trim();
     const wheelNumber = packageWheelMap.get(packageId);
 
@@ -131,17 +167,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid webhook signature." }, { status: 401 });
   }
 
-  let payload: CentralCartOrderPayload;
+  let webhookPayload: CentralCartWebhookPayload | CentralCartOrderPayload;
 
   try {
-    payload = JSON.parse(rawBody) as CentralCartOrderPayload;
+    webhookPayload = JSON.parse(rawBody) as CentralCartWebhookPayload;
   } catch {
     return NextResponse.json({ error: "Invalid JSON payload." }, { status: 400 });
   }
 
+  const payload =
+    "data" in webhookPayload && webhookPayload.data
+      ? webhookPayload.data
+      : (webhookPayload as CentralCartOrderPayload);
+  const event = (webhookPayload.event ?? payload.event ?? "").toLowerCase();
   const status = payload.status?.toLowerCase();
+  const hasApprovedEvent = approvedEvents.has(event);
+  const hasApprovedStatus = status ? approvedStatuses.has(status) : false;
 
-  if (status && !approvedStatuses.has(status)) {
+  if (!hasApprovedEvent && !hasApprovedStatus) {
     return NextResponse.json({ ok: true, ignored: "Order is not approved." });
   }
 
@@ -156,7 +199,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, ignored: "No mapped package found." });
   }
 
-  const eventId = request.headers.get("x-centralcart-event-id");
+  const eventId =
+    request.headers.get("x-centralcart-event-id") ??
+    ("id" in webhookPayload && webhookPayload.id ? String(webhookPayload.id) : null);
   const result = await prisma.$transaction(async (tx) => {
     const existingOrder = await tx.centralCartOrder.findUnique({
       where: { orderId },
@@ -191,7 +236,7 @@ export async function POST(request: NextRequest) {
         buyerEmail: getBuyerEmail(payload),
         wheelNumber: mappedPackage.wheelNumber,
         accessKeyId: accessKey.id,
-        payload: payload as Prisma.InputJsonValue
+        payload: webhookPayload as Prisma.InputJsonValue
       },
       create: {
         orderId,
@@ -201,7 +246,7 @@ export async function POST(request: NextRequest) {
         buyerEmail: getBuyerEmail(payload),
         wheelNumber: mappedPackage.wheelNumber,
         accessKeyId: accessKey.id,
-        payload: payload as Prisma.InputJsonValue
+        payload: webhookPayload as Prisma.InputJsonValue
       }
     });
 
